@@ -36,25 +36,8 @@ export interface FeedState {
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
 }
-export type ModuleId =
-  | 'news - regional'
-  | 'news - local'
-  | 'gov - municipal'
-  | 'gov - county'
-  | 'safety - police & courts'
-  | 'lv business'
-  | 'education - higher ed'
-  | 'education - k12'
-  | 'community & civic'
-  | 'media / culture'
-  | 'lifestyle - arts & events'
-  | 'lifestyle - food & drink'
-  | 'lifestyle - environment'
-  | 'lifestyle - outdoors'
-  | 'sports'
-  | 'transit & weather'
-  | 'health'
-  | 'utilities / infrastructure';
+// CRITICAL FIX: Changed from a strict union to `string` to allow for normalized IDs.
+export type ModuleId = string;
 export interface ModuleConfig {
   id: ModuleId;
   name: string;

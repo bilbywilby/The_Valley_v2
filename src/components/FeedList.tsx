@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFeedStore } from '@/store/feed-store';
-import { useEnabledModuleIds } from '@/store/module-store'; // CORRECTED IMPORT
+import { useEnabledModuleIds } from '@/store/module-store';
 import { FeedItemWithStats } from '@/types';
 import { FeedCard } from './FeedCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,14 +24,16 @@ export function FeedList({ feeds, isLoading, onVote }: FeedListProps) {
   const selectedCategory = useFeedStore(s => s.selectedCategory);
   const viewMode = useFeedStore(s => s.viewMode);
   const favorites = useFeedStore(s => s.favorites);
-  const enabledModuleIds = useEnabledModuleIds(); // Use IDs for filtering
+  const enabledModuleIds = useEnabledModuleIds();
   const filteredFeeds = useMemo(() => {
     const lowerCaseQuery = searchQuery.toLowerCase();
+    // The enabledModuleIds from the store are already normalized.
     const enabledModulesSet = new Set(enabledModuleIds);
     return feeds
       .filter(feed => {
         // Module filter (only applies in 'all' view)
         if (viewMode === 'all') {
+          // Normalize the feed's category string in the same way module IDs are generated.
           const feedModuleId = feed.category.toLowerCase().replace(/[^a-z0-9]/g, '-');
           return enabledModulesSet.has(feedModuleId);
         }
