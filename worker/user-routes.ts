@@ -1,8 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, ChatBoardEntity } from "./entities";
+import { UserEntity, ChatBoardEntity, FeedStatsEntity } from "./entities";
 import { ok, bad, notFound, isStr } from './core-utils';
-
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   app.get('/api/test', (c) => c.json({ success: true, data: { name: 'CF Workers Demo' }}));
 
@@ -71,5 +70,33 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const list = ids?.filter(isStr) ?? [];
     if (list.length === 0) return bad(c, 'ids required');
     return ok(c, { deletedCount: await ChatBoardEntity.deleteMany(c.env, list), ids: list });
+  });
+
+  // FEED STATS
+  app.get('/api/feeds/stats', async (c) => {
+    // In a real app, you might not want to list *all* stats without pagination
+    // But for this project, we'll fetch all of them to hydrate the UI.
+    const { items } = await FeedStatsEntity.list(c.env, null, 1000); // Fetch up to 1000
+    return ok(c, items);
+  });
+
+  app.post('/api/feeds/:id/vote', async (c) => {
+    const id = c.req.param('id');
+    const { voteType } = (await c.req.json()) as { voteType?: 'up' | 'down' };
+
+    if (voteType !== 'up' && voteType !== 'down') {
+      return bad(c, 'Invalid voteType. Must be "up" or "down".');
+    }
+
+    const entity = new FeedStatsEntity(c.env, id);
+    
+    // Create if not exists, then update
+    if (!(await entity.exists())) {
+      await FeedStatsEntity.create(c.env, { id, upvotes: 0, downvotes: 0, status: 'active' });
+    }
+
+    const updatedStats = await entity.mutate(s => ({ ...s, [voteType === 'up' ? 'upvotes' : 'downvotes']: s[voteType === 'up' ? 'upvotes' : 'downvotes'] + 1 }));
+
+    return ok(c, updatedStats);
   });
 }
