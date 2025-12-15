@@ -77,7 +77,10 @@ function updateWranglerJsonc() {
 }
 
 function runSetupCommands() {
-    const commands = [];
+    const commands = [
+    "bun add @tanstack/react-query",
+    "bun add react-hotkeys-hook"
+];
     
     if (commands.length === 0) {
         console.log('⊘ No setup commands to run');
