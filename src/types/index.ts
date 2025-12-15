@@ -1,34 +1,30 @@
 export type FeedStatus = 'active' | 'inactive';
-
 export interface GeoTag {
-  /** Unique identifier for the geotag */
+  /** Unique identifier for the geotag, matches the feed ID */
   id: string;
   lat?: number;
   lon?: number;
   confidence: number;
+  /** The source of the geo data (e.g., 'mock-regex', 'ner-pipeline') */
+  source: string;
 }
-
 export interface FeedItem {
   id: string;
   title: string;
   url: string;
   category: string;
 }
-
 export interface FeedStats {
   id: string;
   upvotes: number;
   downvotes: number;
   status: FeedStatus;
 }
-
 export type FeedItemWithStats = FeedItem & {
   stats: FeedStats;
   geo?: GeoTag;
 };
-
 export type ViewMode = 'all' | 'favorites';
-
 export interface FeedState {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -40,22 +36,25 @@ export interface FeedState {
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
 }
-
 export type ModuleId =
-  | 'news'
-  | 'gov'
-  | 'safety'
-  | 'community'
-  | 'arts'
-  | 'transit'
-  | 'business'
-  | 'education'
-  | 'lifestyle'
-  | 'health'
+  | 'news - regional'
+  | 'news - local'
+  | 'gov - municipal'
+  | 'gov - county'
+  | 'safety - police & courts'
+  | 'lv business'
+  | 'education - higher ed'
+  | 'education - k12'
+  | 'community & civic'
+  | 'media / culture'
+  | 'lifestyle - arts & events'
+  | 'lifestyle - food & drink'
+  | 'lifestyle - environment'
+  | 'lifestyle - outdoors'
   | 'sports'
-  | 'media'
-  | 'utilities';
-
+  | 'transit & weather'
+  | 'health'
+  | 'utilities / infrastructure';
 export interface ModuleConfig {
   id: ModuleId;
   name: string;
@@ -63,4 +62,3 @@ export interface ModuleConfig {
   priority: number;
   weights?: Record<string, number>;
 }
-//

@@ -87,11 +87,11 @@ export function HomePage() {
   };
   const isLoading = isLoadingStats || isLoadingGeo;
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-foreground">
       <ModuleSidebar />
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 flex flex-col min-h-screen">
         <ThemeToggle className="fixed top-4 right-4 z-50" />
-        <header className="py-10 md:py-16 border-b">
+        <header className="py-10 md:py-16 border-b bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="flex justify-center items-center gap-4 mb-4">
               <Rss className="h-10 w-10 text-indigo-500" />
@@ -121,16 +121,18 @@ export function HomePage() {
           </div>
         </header>
         <StickySearch />
-        <main className="py-8 md:py-12">
+        <main className="flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <FeedList feeds={feedsWithStats} isLoading={isLoading} onVote={handleVote} />
+            <div className="py-8 md:py-10 lg:py-12">
+              <FeedList feeds={feedsWithStats} isLoading={isLoading} onVote={handleVote} />
+            </div>
           </div>
         </main>
-        <footer className="py-8 border-t text-center text-sm text-muted-foreground">
+        <footer className="py-8 border-t bg-background text-center text-sm text-muted-foreground">
           <p>Built with ❤️ at Cloudflare</p>
           <p className="mt-1">Data sourced from the Lehigh Valley Master Intelligence Feed project.</p>
         </footer>
-        <Toaster richColors />
+        <Toaster richColors position="bottom-right" />
       </div>
     </div>
   );
