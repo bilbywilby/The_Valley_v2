@@ -1,4 +1,9 @@
 export type FeedStatus = 'active' | 'inactive';
+export interface GeoTag {
+  lat?: number;
+  lon?: number;
+  confidence: number;
+}
 export interface FeedItem {
   id: string;
   title: string;
@@ -13,6 +18,7 @@ export interface FeedStats {
 }
 export type FeedItemWithStats = FeedItem & {
   stats: FeedStats;
+  geo?: GeoTag;
 };
 export type ViewMode = 'all' | 'favorites';
 export interface FeedState {
@@ -25,4 +31,12 @@ export interface FeedState {
   favorites: Set<string>;
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
+}
+export type ModuleId = 'news' | 'gov' | 'safety' | 'community' | 'arts' | 'transit' | 'business' | 'education' | 'lifestyle' | 'health' | 'sports' | 'media' | 'utilities';
+export interface ModuleConfig {
+  id: ModuleId;
+  name: string;
+  enabled: boolean;
+  priority: number;
+  weights?: Record<string, number>;
 }

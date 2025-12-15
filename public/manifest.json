@@ -1,7 +1,7 @@
 {
-  "short_name": "LV Civic Dashboard",
-  "name": "Lehigh Valley Civic Intelligence Dashboard",
-  "description": "Modular civic dashboard for Lehigh Valley with geospatial intelligence overlays, real-time filtering, community voting, and data export.",
+  "short_name": "LV Feed Index",
+  "name": "Lehigh Valley Master Intelligence Feed Index",
+  "description": "A polished, interactive intelligence feed index for the Lehigh Valley featuring real-time search, personalization, community voting, and robust data export capabilities.",
   "icons": [
     {
       "src": "https://images.unsplash.com/photo-1604288721834-b3d36d2d4f8e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=192&q=80",

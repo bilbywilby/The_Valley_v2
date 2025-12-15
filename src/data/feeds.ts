@@ -21,12 +21,21 @@ const categorizedFeeds = {
   "Health": [{ title: "Lehigh Valley Health Network (press releases)", url: "https://lvhn.org/rss/feed.xml" }, { title: "St. Luke's University Health Network (news)", url: "https://www.slhn.org/rss" }, { title: "Good Shepherd Rehab & Nursing (news)", url: "https://www.goodshepherdrehab.org/feed/" }, { title: "Community Health Alerts", url: "https://lvpublichealthalerts.org/feed/" }, { title: "Northampton County Health Dept", url: "https://www.northamptoncounty.org/health/feed/" }],
   "Utilities / Infrastructure": [{ title: "Regional Energy & Utilities Updates", url: "https://lvutilitiesnews.org/feed/" }, { title: "Lehigh County Solid Waste", url: "https://www.lehighcounty.org/Departments/SolidWaste/feed/" }],
 };
-export const ALL_FEEDS: FeedItem[] = Object.entries(categorizedFeeds)
+const allFeedsWithPotentialDuplicates = Object.entries(categorizedFeeds)
   .flatMap(([category, feeds]) =>
     feeds.map(feed => ({
       ...feed,
-      id: uuidv5(feed.url, UUID_NAMESPACE),
+      // CRITICAL FIX: Generate a more unique ID to prevent key collisions
+      id: uuidv5(`${feed.url}-${feed.title}-${category}`, UUID_NAMESPACE),
       category,
     }))
   );
+// Deduplicate feeds based on the newly generated unique ID
+const uniqueFeedsMap = new Map<string, FeedItem>();
+allFeedsWithPotentialDuplicates.forEach(feed => {
+  if (!uniqueFeedsMap.has(feed.id)) {
+    uniqueFeedsMap.set(feed.id, feed);
+  }
+});
+export const ALL_FEEDS: FeedItem[] = Array.from(uniqueFeedsMap.values());
 export const CATEGORIES = Object.keys(categorizedFeeds);
