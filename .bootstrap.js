@@ -77,12 +77,7 @@ function updateWranglerJsonc() {
 }
 
 function runSetupCommands() {
-    const commands = [
-    "bun add @tanstack/react-query",
-    "bun add react-hotkeys-hook",
-    "bun install zustand",
-    "bun add -D eslint-plugin-react"
-];
+    const commands = [];
     
     if (commands.length === 0) {
         console.log('⊘ No setup commands to run');
