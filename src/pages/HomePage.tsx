@@ -1,16 +1,18 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Rss, Github, MapPin } from 'lucide-react';
+import { Rss, Github, MapPin, BarChartHorizontal } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { StickySearch } from '@/components/StickySearch';
 import { FeedList } from '@/components/FeedList';
 import { ExportButtons } from '@/components/ExportButtons';
 import { Button } from '@/components/ui/button';
-import { ALL_FEEDS } from '@/data/feeds';
-import { FeedStats, FeedItemWithStats, GeoTag } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ALL_FEEDS, CATEGORIES } from '@/data/feeds';
+import { FeedStats, FeedItemWithStats, GeoTag, ModuleId } from '@/types';
 import { api } from '@/lib/api-client';
 import { ModuleSidebar } from '@/components/ModuleSidebar';
+import { useModuleStore } from '@/store/module-store';
 async function fetchFeedStats(): Promise<FeedStats[]> {
   return api('/api/feeds/stats');
 }
@@ -31,6 +33,30 @@ async function tagGeo(feedId: string): Promise<GeoTag> {
 }
 export function HomePage() {
   const queryClient = useQueryClient();
+  const modules = useModuleStore(s => s.modules);
+  // Initialize module store from static data on first load
+  useEffect(() => {
+    const initialModules = CATEGORIES.map(cat => ({
+      id: cat.toLowerCase().replace(/[^a-z0-9]/g, '-') as ModuleId,
+      name: cat,
+      enabled: true,
+      priority: 1,
+    }));
+    // Use getState to avoid re-triggering effect if setModules was in dependency array
+    useModuleStore.getState().setModules(initialModules);
+  }, []);
+  // Invalidate queries when module configuration changes
+  useEffect(() => {
+    const unsubscribe = useModuleStore.subscribe(
+      (state, prevState) => {
+        if (state.modules !== prevState.modules) {
+          queryClient.invalidateQueries({ queryKey: ['feedStats'] });
+          queryClient.invalidateQueries({ queryKey: ['geoData'] });
+        }
+      }
+    );
+    return unsubscribe;
+  }, [queryClient]);
   const { data: stats = [], isLoading: isLoadingStats } = useQuery({
     queryKey: ['feedStats'],
     queryFn: fetchFeedStats,
@@ -85,6 +111,11 @@ export function HomePage() {
       toast.error('An error occurred during geo-calibration.');
     }
   };
+  const topModules = useMemo(() => {
+    return Object.values(modules)
+      .sort((a, b) => b.priority - a.priority)
+      .slice(0, 5);
+  }, [modules]);
   const isLoading = isLoadingStats || isLoadingGeo;
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-foreground">
@@ -102,11 +133,6 @@ export function HomePage() {
             <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
               140+ Categorized RSS/Atom Feeds for the Lehigh Valley Region.
             </p>
-            <div className="mt-6 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200 rounded-lg shadow-sm max-w-2xl mx-auto">
-              <p className="font-medium text-sm">
-                This is an index only. Use the "Subscribe" button to add feeds to your preferred RSS reader.
-              </p>
-            </div>
             <div className="mt-8 flex justify-center items-center gap-4 flex-wrap">
               <ExportButtons feeds={ALL_FEEDS} />
               <Button variant="outline" size="sm" asChild>
@@ -118,6 +144,24 @@ export function HomePage() {
                 <MapPin className="mr-2 h-4 w-4" /> Calibrate Geo
               </Button>
             </div>
+            <Card className="mt-8 max-w-md mx-auto text-left animate-fade-in">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <BarChartHorizontal className="h-4 w-4 text-muted-foreground" />
+                  Top Ranked Modules
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm">
+                  {topModules.map(m => (
+                    <li key={m.id} className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{m.name}</span>
+                      <span className="font-mono font-semibold text-foreground">{m.priority}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </header>
         <StickySearch />

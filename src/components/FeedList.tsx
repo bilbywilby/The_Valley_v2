@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useFeedStore, useEnabledModuleNames } from '@/store/feed-store';
+import { useFeedStore } from '@/store/feed-store';
+import { useEnabledModuleIds } from '@/store/module-store'; // CORRECTED IMPORT
 import { FeedItemWithStats } from '@/types';
 import { FeedCard } from './FeedCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,15 +24,16 @@ export function FeedList({ feeds, isLoading, onVote }: FeedListProps) {
   const selectedCategory = useFeedStore(s => s.selectedCategory);
   const viewMode = useFeedStore(s => s.viewMode);
   const favorites = useFeedStore(s => s.favorites);
-  const enabledModuleNames = useEnabledModuleNames();
+  const enabledModuleIds = useEnabledModuleIds(); // Use IDs for filtering
   const filteredFeeds = useMemo(() => {
     const lowerCaseQuery = searchQuery.toLowerCase();
-    const enabledModulesSet = new Set(enabledModuleNames);
+    const enabledModulesSet = new Set(enabledModuleIds);
     return feeds
       .filter(feed => {
         // Module filter (only applies in 'all' view)
         if (viewMode === 'all') {
-          return enabledModulesSet.has(feed.category);
+          const feedModuleId = feed.category.toLowerCase().replace(/[^a-z0-9]/g, '-');
+          return enabledModulesSet.has(feedModuleId);
         }
         return true;
       })
@@ -53,23 +55,21 @@ export function FeedList({ feeds, isLoading, onVote }: FeedListProps) {
         // Search query filter
         return feed.title.toLowerCase().includes(lowerCaseQuery) || feed.url.toLowerCase().includes(lowerCaseQuery);
       });
-  }, [feeds, searchQuery, selectedCategory, viewMode, favorites, enabledModuleNames]);
+  }, [feeds, searchQuery, selectedCategory, viewMode, favorites, enabledModuleIds]);
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="flex flex-col space-y-3">
-            <Skeleton className="h-48 w-full rounded-xl" />
-          </div>
+          <Skeleton key={i} className="h-48 w-full rounded-xl" />
         ))}
       </div>
     );
   }
   if (filteredFeeds.length === 0) {
     return (
-      <div className="text-center py-16 col-span-full">
+      <div className="text-center py-16 col-span-full animate-fade-in">
         <h3 className="text-xl font-semibold text-foreground">No Feeds Found</h3>
-        <p className="text-muted-foreground mt-2">Try adjusting your search or filters, or enable more modules.</p>
+        <p className="text-muted-foreground mt-2">Try adjusting your search or filters, or enable more modules in the sidebar.</p>
       </div>
     );
   }

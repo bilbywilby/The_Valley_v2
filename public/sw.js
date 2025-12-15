@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lv-civic-dashboard-v2';
+const CACHE_NAME = 'lv-feed-index-v1';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
+  // Add other critical assets like main JS/CSS bundles if their names are static
 ];
-// Install: Caches core assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -12,10 +12,23 @@ self.addEventListener('install', event => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
-      .then(() => self.skipWaiting())
   );
 });
-// Activate: Cleans up old caches
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request).then(response => {
+        if (response) {
+          return response;
+        }
+        // Optional: return a generic offline page
+        // if (event.request.mode === 'navigate') {
+        //   return caches.match('/offline.html');
+        // }
+      });
+    })
+  );
+});
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -27,49 +40,6 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    }).then(() => self.clients.claim())
-  );
-});
-// Fetch: Implements caching strategies
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
-  // For API calls, use a stale-while-revalidate strategy
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then(cache => {
-        return fetch(request).then(networkResponse => {
-          cache.put(request, networkResponse.clone());
-          return networkResponse;
-        }).catch(() => {
-          return cache.match(request);
-        });
-      })
-    );
-    return;
-  }
-  // For other requests (assets, navigation), use a cache-first strategy
-  event.respondWith(
-    caches.match(request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        // Not in cache - fetch and cache
-        return fetch(request).then(
-          networkResponse => {
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-              return networkResponse;
-            }
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(request, responseToCache);
-              });
-            return networkResponse;
-          }
-        );
-      })
+    })
   );
 });
