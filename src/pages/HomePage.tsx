@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Rss, Github, BrainCircuit } from 'lucide-react';
+import { Rss, Github, BrainCircuit, Shield } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { z } from 'zod';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -8,11 +8,13 @@ import { StickySearch } from '@/components/StickySearch';
 import { FeedList } from '@/components/FeedList';
 import { ExportButtons } from '@/components/ExportButtons';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ALL_FEEDS, CATEGORIES } from '@/data/feeds';
 import { FeedStats, FeedItemWithStats, GeoTag, ModuleId } from '@/types';
 import { api } from '@/lib/api-client';
 import { useModuleStore } from '@/store/module-store';
+import { usePrivacyStore } from '@/store/privacy-store';
 import { useFeedStore } from '@/store/feed-store';
 import { SettingsDrawer } from '@/components/SettingsDrawer';
 import { ModuleSidebar } from '@/components/ModuleSidebar';
@@ -48,6 +50,7 @@ export function HomePage() {
   const queryClient = useQueryClient();
   const density = useFeedStore(s => s.present.density);
   const setModules = useModuleStore(s => s.setModules);
+  const privacyMode = usePrivacyStore(s => s.privacyMode);
   const setSelectedCategory = useFeedStore(s => s.setSelectedCategory);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   useEffect(() => {
@@ -58,6 +61,13 @@ export function HomePage() {
       priority: 1,
     }));
     setModules(initialModules);
+
+    // Handle deep links on load
+    if (window.location.hash && window.location.hash.startsWith('#feed-')) {
+      const element = document.getElementById(window.location.hash.substring(1));
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
   }, [setModules]);
   const { data: stats = [], isLoading: isLoadingStats } = useQuery({
     queryKey: ['feedStats'],
@@ -126,6 +136,11 @@ export function HomePage() {
       <ModuleSidebar />
       <div className="lg:pl-64 flex flex-col min-h-screen">
         <ThemeToggle className="fixed top-4 right-4 z-50" />
+        {privacyMode && (
+          <Badge variant="default" className="fixed top-16 right-4 z-50 bg-blue-600 hover:bg-blue-700">
+            <Shield className="mr-2 h-4 w-4" /> Duck Shield Active
+          </Badge>
+        )}
         <header className="py-10 md:py-16 border-b bg-background/50 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" id="main-header">
             <div className="flex justify-center items-center gap-4 mb-4">

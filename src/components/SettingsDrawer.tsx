@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { usePrivacyStore } from '@/store/privacy-store';
 import { useFeedStore } from '@/store/feed-store';
 import { useModuleStore } from '@/store/module-store';
 import { useMemo } from 'react';
@@ -103,6 +104,8 @@ export function SettingsDrawer() {
   const density = useFeedStore(state => state.present.density);
   const setDensity = useFeedStore(state => state.setDensity);
   const undoFeed = useFeedStore(state => state.undo);
+  const privacyMode = usePrivacyStore(state => state.privacyMode);
+  const togglePrivacyMode = usePrivacyStore(state => state.togglePrivacyMode);
   const redoFeed = useFeedStore(state => state.redo);
   const canUndoFeed = useFeedStore(state => state.past.length > 0);
   const canRedoFeed = useFeedStore(state => state.future.length > 0);
@@ -127,6 +130,13 @@ export function SettingsDrawer() {
       });
     }, 1500);
   };
+  const handlePrivacyToggle = () => {
+    togglePrivacyMode();
+    toast.success(`Duck Shield ${!privacyMode ? 'activated' : 'deactivated'}.`, {
+      description: !privacyMode ? 'Analytics and remote error reporting are now disabled.' : 'Analytics and error reporting have been re-enabled.',
+      });
+    }, 1500);
+  };
   const canUndo = canUndoFeed || canUndoModule;
   const canRedo = canRedoFeed || canRedoModule;
   const handleUndo = () => { if (canUndoFeed) undoFeed(); if (canUndoModule) undoModule(); };
@@ -148,6 +158,17 @@ export function SettingsDrawer() {
         </SheetHeader>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-6">
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">Privacy</h3>
+              <div className="flex items-center justify-between p-2 rounded-md bg-accent/50 min-h-[44px]">
+                <label htmlFor="privacy-mode-toggle" className="text-sm font-medium cursor-pointer pr-2">
+                  Duck Shield
+                  <p className="text-xs text-muted-foreground">Disable remote analytics & tracking.</p>
+                </label>
+                <Switch id="privacy-mode-toggle" checked={privacyMode} onCheckedChange={handlePrivacyToggle} />
+              </div>
+              <Badge variant={privacyMode ? "default" : "secondary"} className="w-full justify-center">{privacyMode ? '🛡️ Active (Local Only)' : 'Off'}</Badge>
+            </section>
             <SavedQueriesSection />
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">History</h3>
