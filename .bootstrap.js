@@ -80,7 +80,8 @@ function runSetupCommands() {
     const commands = [
     "bun add @tanstack/react-query",
     "bun add react-hotkeys-hook",
-    "bun install zustand"
+    "bun install zustand",
+    "bun add -D rollup-plugin-visualizer"
 ];
     
     if (commands.length === 0) {
