@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Rss, Github, MapPin } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
@@ -15,16 +15,13 @@ import { useModuleStore } from '@/store/module-store';
 import { useFeedStore } from '@/store/feed-store';
 import { SettingsDrawer } from '@/components/SettingsDrawer';
 import { ModuleSidebar } from '@/components/ModuleSidebar';
+import { DashboardViz } from '@/components/DashboardViz';
 const voteSchema = z.object({
-  id: z.string(), // UUID check removed to match data source
+  id: z.string(),
   voteType: z.enum(['up', 'down']),
 });
-async function fetchFeedStats(): Promise<FeedStats[]> {
-  return api('/api/feeds/stats');
-}
-async function fetchAllGeo(): Promise<GeoTag[]> {
-  return api('/api/geo/all');
-}
+async function fetchFeedStats(): Promise<FeedStats[]> { return api('/api/feeds/stats'); }
+async function fetchAllGeo(): Promise<GeoTag[]> { return api('/api/geo/all'); }
 async function postVote(voteData: { id: string; voteType: 'up' | 'down' }): Promise<FeedStats> {
   const validatedData = voteSchema.parse(voteData);
   return api(`/api/feeds/${validatedData.id}/vote`, {
@@ -42,6 +39,8 @@ export function HomePage() {
   const queryClient = useQueryClient();
   const density = useFeedStore(s => s.present.density);
   const setModules = useModuleStore(s => s.setModules);
+  const setSelectedCategory = useFeedStore(s => s.setSelectedCategory);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   useEffect(() => {
     const initialModules = CATEGORIES.map(cat => ({
       id: cat.toLowerCase().replace(/[^a-z0-9]/g, '-') as ModuleId,
@@ -96,25 +95,39 @@ export function HomePage() {
     voteMutation.mutate({ id, voteType });
   };
   const handleBatchGeoTag = () => {
-    const promise = Promise.all(ALL_FEEDS.map(feed => geoTagMutation.mutateAsync(feed.id)))
-      .then(() => true);
+    const promise = Promise.all(ALL_FEEDS.map(feed => geoTagMutation.mutateAsync(feed.id))).then(() => true);
     toast.promise(promise, {
         loading: 'Calibrating geospatial data for all sources...',
         success: 'Geospatial intelligence calibrated successfully!',
         error: 'An error occurred during geo-calibration.',
     });
   };
+  const handleVizFilter = (category: string | null) => {
+    setSelectedCategory(category);
+    document.getElementById('feed-list-container')?.scrollIntoView({ behavior: 'smooth' });
+  };
   const isLoading = isLoadingStats || isLoadingGeo;
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => setIsInitialLoad(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
+      {isInitialLoad && (
+        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        </div>
+      )}
       <ModuleSidebar />
       <div className="lg:pl-64">
         <ThemeToggle className="fixed top-4 right-4 z-50" />
-        <header className="py-10 md:py-16 border-b bg-background">
+        <header className="py-10 md:py-16 border-b bg-background/50 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" id="main-header">
             <div className="flex justify-center items-center gap-4 mb-4">
-              <Rss className="h-10 w-10 text-indigo-500" />
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">
+              <Rss className="h-10 w-10 text-primary" />
+              <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
                 LV Civic Intelligence Dashboard
               </h1>
             </div>
@@ -138,6 +151,11 @@ export function HomePage() {
         <StickySearch />
         <main role="main" aria-labelledby="main-header" className="flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="py-8 md:py-10 lg:py-12">
+              <DashboardViz feeds={feedsWithStats} onFilter={handleVizFilter} />
+            </div>
+          </div>
+          <div id="feed-list-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="py-8 md:py-10 lg:py-12">
               <FeedList feeds={feedsWithStats} isLoading={isLoading} onVote={handleVote} density={density} />
             </div>

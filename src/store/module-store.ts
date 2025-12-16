@@ -33,34 +33,34 @@ export const useModuleStore = create<ModuleStore>()(
       past: [],
       present: initialState,
       future: [],
-      setModules: (modules) => {
-        const validatedModules = z.array(moduleConfigSchema).safeParse(modules);
-        if (!validatedModules.success) return;
-        set((state) => {
-          state.past.push(state.present);
-          const newModules = validatedModules.data.reduce((acc, module) => {
-            const existingModule = state.present.modules[module.id];
-            acc[module.id] = {
-              ...module,
-              enabled: existingModule?.enabled ?? module.enabled,
-            };
-            return acc;
-          }, {} as Record<ModuleId, ModuleConfig>);
-          state.present.modules = newModules;
-          state.future = [];
-        });
-      },
-      toggleModule: (id) => {
-        set((state) => {
-          if (state.present.modules[id]) {
-            state.past.push(state.present);
-            // Create a new object for the changed module to ensure immer detects the change
-            const newModule = { ...state.present.modules[id], enabled: !state.present.modules[id].enabled };
-            state.present.modules = { ...state.present.modules, [id]: newModule };
-            state.future = [];
-          }
-        });
-      },
+setModules: (modules) => {
+  const validatedModules = z.array(moduleConfigSchema).safeParse(modules);
+  if (!validatedModules.success) return;
+  set((state) => {
+    state.past.push(state.present);
+    // Mutate the draft directly for each incoming module
+    validatedModules.data.forEach((module) => {
+      const existing = state.present.modules[module.id];
+      state.present.modules[module.id] = {
+        ...(existing ?? {}),
+        ...module,
+        // Preserve the previous enabled flag if it existed, otherwise use the incoming value
+        enabled: existing?.enabled ?? module.enabled,
+      };
+    });
+    state.future = [];
+  });
+},
+toggleModule: (id) => {
+  set((state) => {
+    if (state.present.modules[id]) {
+      state.past.push(state.present);
+      // Directly mutate the enabled flag – immer will track the change
+      state.present.modules[id].enabled = !state.present.modules[id].enabled;
+      state.future = [];
+    }
+  });
+},
       undo: () => set((state) => {
         if (state.past.length > 0) {
           const newPast = [...state.past];

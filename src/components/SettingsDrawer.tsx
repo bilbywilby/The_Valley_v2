@@ -73,8 +73,8 @@ export function SettingsDrawer() {
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">Display Density</h3>
               <ToggleGroup type="single" value={density} onValueChange={(v) => v && setDensity(v as 'full' | 'compact')} className="w-full motion-reduce:scale-100">
-                <ToggleGroupItem value="full" aria-label="Full density" className="flex-1">Full</ToggleGroupItem>
-                <ToggleGroupItem value="compact" aria-label="Compact density" className="flex-1">Compact</ToggleGroupItem>
+<ToggleGroupItem value="full" aria-label="Full density" className="flex-1">Full</ToggleGroupItem>
+<ToggleGroupItem value="compact" aria-label="Compact density" className="flex-1">Compact</ToggleGroupItem>
               </ToggleGroup>
             </section>
             <section className="space-y-2">

@@ -23,16 +23,16 @@ const containerVariants = {
   },
 };
 export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
-  const searchQuery = useFeedStore(s => s.present.searchQuery);
-  const selectedCategory = useFeedStore(s => s.present.selectedCategory);
-  const viewMode = useFeedStore(s => s.present.viewMode);
-  const favorites = useFeedStore(s => s.present.favorites);
-  // CRITICAL FIX: Use useShallow to get a stable reference to the modules object.
-  // This prevents re-renders that cause the "dispatcher is null" invalid hook call error.
-  const modules = useModuleStore(useShallow(s => s.present.modules));
-  const enabledModuleIds = useMemo(() =>
-    new Set(Object.values(modules).filter((m) => m.enabled).map((m) => m.id)),
-    [modules]
+  const { searchQuery, selectedCategory, viewMode, favorites } = useFeedStore(
+    useShallow(s => ({
+      searchQuery: s.present.searchQuery,
+      selectedCategory: s.present.selectedCategory,
+      viewMode: s.present.viewMode,
+      favorites: s.present.favorites,
+    }))
+  );
+  const enabledModuleIds = useModuleStore(
+    useShallow(s => new Set(Object.values(s.present.modules).filter(m => m.enabled).map(m => m.id)))
   );
   const filteredFeeds = useMemo(() => {
     const lowerCaseQuery = searchQuery.toLowerCase();
@@ -55,7 +55,7 @@ export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={`skeleton-${i}`} className={cn("w-full rounded-xl shimmer-bg", density === 'compact' ? 'h-40' : 'h-64')} />
+          <Skeleton key={`skeleton-${i}`} className={cn("w-full rounded-xl shimmer-bg motion-reduce:animate-none", density === 'compact' ? 'h-40' : 'h-64')} />
         ))}
       </div>
     );

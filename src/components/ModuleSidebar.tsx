@@ -1,5 +1,4 @@
-import { LayoutGrid, MapPin } from 'lucide-react';
-import { useShallow } from 'zustand/react/shallow';
+import { LayoutGrid, MapPin, Menu } from 'lucide-react';
 import { useModuleStore } from '@/store/module-store';
 import { GeoTag } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,6 @@ import { api } from '@/lib/api-client';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
-import { Menu } from 'lucide-react';
 async function fetchAllGeo(): Promise<GeoTag[]> {
     return api('/api/geo/all');
 }
@@ -36,7 +34,7 @@ function drawPins(ctx: CanvasRenderingContext2D, geoData: GeoTag[], width: numbe
     });
 }
 function SidebarContent() {
-  const modules = useModuleStore(useShallow(s => s.present.modules));
+  const modules = useModuleStore(s => s.present.modules);
   const toggleModule = useModuleStore(s => s.toggleModule);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { data: geoData = [] } = useQuery({ queryKey: ['geoData'], queryFn: fetchAllGeo });
@@ -73,7 +71,7 @@ function SidebarContent() {
             <motion.div
               key={module.id}
               variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
-              className="flex items-center justify-between p-2 rounded-md hover:bg-accent"
+              className="flex items-center justify-between p-2 rounded-md hover:bg-accent motion-reduce:transform-none"
             >
               <label htmlFor={`module-${module.id}`} className="text-sm font-medium cursor-pointer pr-2">
                 {module.name}
@@ -83,7 +81,8 @@ function SidebarContent() {
                 checked={module.enabled}
                 onCheckedChange={() => toggleModule(module.id)}
                 aria-label={`Toggle ${module.name} module`}
-                aria-expanded={module.enabled}
+                aria-checked={module.enabled}
+                role="switch"
               />
             </motion.div>
           ))}
@@ -96,7 +95,7 @@ function SidebarContent() {
             <Tooltip>
                 <TooltipTrigger asChild>
                     <div className="aspect-video w-full bg-muted rounded-md center text-xs text-muted-foreground overflow-hidden motion-reduce:animate-none">
-                        <canvas ref={canvasRef} className="bg-slate-200/20 dark:bg-slate-900/50 w-full h-full" title="Geospatial intelligence pins for civic dashboard calibration (Green=High Confidence, Blue=Medium, Red=Low)." />
+                        <canvas ref={canvasRef} className="bg-slate-200/20 dark:bg-slate-900/50 w-full h-full" title="Geospatial intelligence pins for civic dashboard calibration (Green=High Confidence, Blue=Medium, Red=Low)." aria-label="Intelligence map of Lehigh Valley showing feed source confidence." />
                     </div>
                 </TooltipTrigger>
                 <TooltipContent>
