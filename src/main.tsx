@@ -18,6 +18,9 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
+      // In production, allow queries to run even if offline, relying on the service worker cache.
+      // In development, stick to the default 'online' to avoid confusion.
+      networkMode: import.meta.env.DEV ? 'online' : 'always',
     },
   },
 });

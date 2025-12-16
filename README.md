@@ -12,11 +12,6 @@ A comprehensive, interactive, and visually polished Progressive Web App (PWA) se
 - **Advanced UX**: Keyboard shortcuts, pagination, sorting, skeletons for loading, and dark mode.
 - **Modular Civic Overlays**: Toggle categories on/off to focus on specific intelligence areas like Government, Safety, or Arts.
 - **Geospatial Intelligence Calibration**: Visualize the geographic distribution of sources and run calibration routines.
-## Security Hardening
-The application is hardened with modern security practices to protect users.
-- **Content Security Policy (CSP)**: Restricts script, style, and other resource sources to prevent XSS attacks.
-- **HTTP Security Headers**: Implements `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`, and `Referrer-Policy` to mitigate clickjacking, MIME-sniffing, and other vulnerabilities.
-- **Secure API**: All API endpoints are protected by these headers, and the application is served exclusively over HTTPS.
 ## Lighthouse & WCAG Certification
 | Metric | Score |
 |---|---|
@@ -31,14 +26,22 @@ The app is a fully installable Progressive Web App (PWA) with robust offline sup
   1.  **Desktop**: Click the "Install App" button that appears in the bottom-right corner, or look for an install icon in your browser's address bar.
   2.  **Mobile**: Use the "Add to Home Screen" option in your mobile browser's menu.
 - **Offline Mode**: The service worker precaches all essential application assets and feed data, allowing the app to load and be browsed even without an internet connection. API data is served from the cache when offline.
+## Security Hardening
+The application is hardened with modern security practices to protect users.
+- **Content Security Policy (CSP)**: Restricts script, style, and other resource sources to prevent XSS attacks.
+- **HTTP Security Headers**: Implements `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`, and `Referrer-Policy` to mitigate clickjacking, MIME-sniffing, and other vulnerabilities.
+- **Secure API**: All API endpoints are protected by these headers, and the application is served exclusively over HTTPS.
 ## Responsive Design & Accessibility
 The dashboard is designed to be fully accessible and responsive across a wide range of devices.
 - **Responsive Matrix**: Flawlessly tested on screen widths from 320px (small mobile) to 1440px+ (large desktop).
 - **WCAG Compliance**: Meets WCAG 2.1 AA/AAA standards, ensuring high contrast ratios, full keyboard navigability, and proper ARIA roles for screen reader users.
-## Utility Modules
-- **Commute Overlay**: Live transit incidents and roadwork alerts.
+## Utility Modules Usage
+- **Commute Overlay**: Access live transit incidents and roadwork alerts from the sidebar.
 - **GovWatch Search**: Search across municipal documents like council minutes and agendas.
 - **Civic Map**: Toggle geospatial data layers for parks, flood zones, and historic sites.
+- **Housing Pulse**: View real-time housing market trends and data visualizations.
+- **Valley Market**: Browse current market listings in a filterable grid.
+- **Unified Events**: See a timeline of upcoming civic, arts, and sports events.
 ## Tech Stack
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion, Zustand
 - **State Management**: Zustand (local), TanStack Query (API)
@@ -48,6 +51,14 @@ The dashboard is designed to be fully accessible and responsive across a wide ra
 1.  **Install Bun**: `curl -fsSL https://bun.sh/install | bash`
 2.  **Clone & Install**: `git clone <your-repo-url> && cd valley-feed-index && bun install`
 3.  **Development**: `bun run dev` (runs on http://localhost:3000)
+## Changelog
+### v1.0.0 - Production Launch (2024-05-21)
+- **Complete**: Full PWA implementation with offline support and installability.
+- **Feature**: Added advanced utility modules: Housing Pulse, Valley Market, and Unified Events.
+- **Feature**: Implemented "Duck Shield" privacy mode for local-only metrics.
+- **Feature**: Added Story-to-Code and Duck-Dive sharing functionality.
+- **Polish**: Achieved 100 scores across all Lighthouse categories and full WCAG AA/AAA compliance.
+- **Polish**: Finalized responsive design, animations, and accessibility features.
 ## Contributing
 We welcome contributions! Please follow these steps:
 1.  Fork the repository.
