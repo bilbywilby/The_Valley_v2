@@ -4,12 +4,15 @@ import { immer } from 'zustand/middleware/immer';
 import { z } from 'zod';
 type Density = 'full' | 'compact';
 type ViewMode = 'all' | 'favorites';
+type VelocityWindow = 1 | 6 | 24;
 export interface FeedState {
   searchQuery: string;
   selectedCategory: string | null;
   viewMode: ViewMode;
   favorites: Set<string>;
   density: Density;
+  velocityWindow: VelocityWindow;
+  savedQueries: any[]; // Simplified for this phase
 }
 const searchQuerySchema = z.string().max(100, "Search query is too long");
 export interface FeedActions {
@@ -18,6 +21,8 @@ export interface FeedActions {
   setViewMode: (mode: ViewMode) => void;
   toggleFavorite: (id: string) => void;
   setDensity: (density: Density) => void;
+  setVelocityWindow: (window: VelocityWindow) => void;
+  saveCurrentQuery: () => void;
   undo: () => void;
   redo: () => void;
 }
@@ -33,6 +38,8 @@ const initialState: FeedState = {
   viewMode: 'all',
   favorites: new Set<string>(),
   density: 'full',
+  velocityWindow: 24,
+  savedQueries: [],
 };
 export const useFeedStore = create<FeedStore>()(
   persist(
@@ -74,6 +81,21 @@ export const useFeedStore = create<FeedStore>()(
         state.present.density = density;
         state.future = [];
       }),
+      setVelocityWindow: (window) => set((state) => {
+        state.past.push(state.present);
+        state.present.velocityWindow = window;
+        state.future = [];
+      }),
+      saveCurrentQuery: () => {
+        const { searchQuery, selectedCategory, velocityWindow } = get().present;
+        const newQuery = { searchQuery, selectedCategory, velocityWindow, id: Date.now().toString() };
+        set(state => {
+            state.past.push(state.present);
+            state.present.savedQueries.push(newQuery);
+            state.future = [];
+        });
+        // In a real app, you'd also POST this to /api/query/save
+      },
       undo: () => set((state) => {
         if (state.past.length > 0) {
           const newPast = [...state.past];
@@ -97,24 +119,22 @@ export const useFeedStore = create<FeedStore>()(
       name: 'lv-feed-index-storage',
       storage: createJSONStorage(() => localStorage, {
         replacer: (key, value) => {
-          if (key === 'present' && value instanceof Object && 'favorites' in value) {
-            const present = value as FeedState;
-            return { ...present, favorites: Array.from(present.favorites) };
+          if (value instanceof Set) {
+            return Array.from(value);
           }
           return value;
         },
         reviver: (key, value) => {
-          if (key === 'present' && value instanceof Object && 'favorites' in value) {
-            const present = value as Omit<FeedState, 'favorites'> & { favorites: string[] };
-            return { ...present, favorites: new Set(present.favorites) };
+          if (key === 'favorites' && Array.isArray(value)) {
+            return new Set(value);
           }
           return value;
         },
       }),
       partialize: (state) => ({
         present: {
+          ...state.present,
           favorites: state.present.favorites,
-          density: state.present.density,
         },
       }),
       merge: (persisted, current) => {
@@ -123,6 +143,8 @@ export const useFeedStore = create<FeedStore>()(
         if (p?.present) {
             merged.present.favorites = p.present.favorites ?? new Set();
             merged.present.density = p.present.density ?? 'full';
+            merged.present.velocityWindow = p.present.velocityWindow ?? 24;
+            merged.present.savedQueries = p.present.savedQueries ?? [];
         }
         return merged;
       },

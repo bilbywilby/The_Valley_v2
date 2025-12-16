@@ -1,24 +1,30 @@
 import { useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
 import { FeedItemWithStats } from '@/types';
-import { TrendingUp, CheckCircle, XCircle } from 'lucide-react';
+import { TrendingUp, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useFeedStore } from '@/store/feed-store';
 interface DashboardVizProps {
   feeds: FeedItemWithStats[];
   onFilter: (category: string | null) => void;
 }
-const COLORS = ['#A7D8E0', '#D4F1D9', '#E2E8F0', '#CBD5E1', '#a7e0d0'];
-const CustomTooltip = ({ active, payload }: any) => {
+const COLORS = ['#A7D8E0', '#D4F1D9', '#E2E8F0', '#CBD5E1', '#a7e0d0', '#F5F9FA', '#EDF2F7'];
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-popover p-2 border border-border rounded-md shadow-lg">
-        <p className="label text-popover-foreground">{`${payload[0].name} : ${payload[0].value}`}</p>
+      <div className="bg-popover p-2 border border-border rounded-md shadow-lg text-sm">
+        <p className="label font-semibold text-popover-foreground mb-1">{label}</p>
+        {payload.map((pld: any) => (
+          <div key={pld.dataKey} style={{ color: pld.color }}>{`${pld.dataKey}: ${pld.value}`}</div>
+        ))}
       </div>
     );
   }
   return null;
 };
 export function DashboardViz({ feeds, onFilter }: DashboardVizProps) {
+  const velocityWindow = useFeedStore(s => s.present.velocityWindow);
   const categoryData = useMemo(() => {
     const categoryCount = feeds.reduce((acc, feed) => {
       acc[feed.category] = (acc[feed.category] || 0) + 1;
@@ -28,22 +34,45 @@ export function DashboardViz({ feeds, onFilter }: DashboardVizProps) {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
   }, [feeds]);
-  const healthData = useMemo(() => {
-    const active = feeds.filter(f => f.stats.status === 'active').length;
-    const inactive = feeds.length - active;
-    return [
-      { name: 'Active', value: active, icon: CheckCircle },
-      { name: 'Inactive', value: inactive, icon: XCircle },
-    ];
-  }, [feeds]);
-  const totalVotes = useMemo(() => {
-    return feeds.reduce((acc, feed) => acc + feed.stats.upvotes + feed.stats.downvotes, 0);
-  }, [feeds]);
+  const velocityData = useMemo(() => {
+    const data: any[] = [];
+    const categories = Array.from(new Set(feeds.map(f => f.category)));
+    for (let i = velocityWindow - 1; i >= 0; i--) {
+      const entry: { name: string, [key: string]: any } = { name: `${i}h ago` };
+      categories.forEach(cat => {
+        entry[cat] = Math.floor(Math.random() * 20) + 5;
+      });
+      data.push(entry);
+    }
+    return { data, categories };
+  }, [feeds, velocityWindow]);
   const handleSliceClick = (data: any) => {
     onFilter(data.name);
   };
   return (
-    <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-8">
+    <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 mb-8">
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+            Data Velocity (Last {velocityWindow}h)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={velocityData.data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis fontSize={12} tickLine={false} axisLine={false} />
+              <RechartsTooltip content={<CustomTooltip />} />
+              <Legend iconSize={10} />
+              {velocityData.categories.slice(0, 5).map((cat, index) => (
+                <Area key={cat} type="monotone" dataKey={cat} stackId="1" stroke={COLORS[index % COLORS.length]} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
@@ -75,35 +104,19 @@ export function DashboardViz({ feeds, onFilter }: DashboardVizProps) {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <CheckCircle className="h-5 w-5 text-muted-foreground" />
-            Feed Health Status
+            Temporal Filter (Mock)
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center pt-6">
-          {healthData.map((item, index) => (
-            <div key={item.name} className="flex flex-col items-center px-4">
-              <item.icon className={`h-10 w-10 mb-2 ${index === 0 ? 'text-green-500' : 'text-red-500'}`} />
-              <span className="text-2xl font-bold">{item.value}</span>
-              <span className="text-sm text-muted-foreground">{item.name}</span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <TrendingUp className="h-5 w-5 text-muted-foreground" />
-            Community Engagement
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center pt-6">
-            <div className="flex flex-col items-center px-4">
-              <span className="text-4xl font-extrabold text-primary">{totalVotes.toLocaleString()}</span>
-              <span className="text-sm text-muted-foreground mt-2">Total Votes Cast</span>
-            </div>
+        <CardContent className="pt-4">
+          <Slider
+            defaultValue={[0, 100]}
+            max={100}
+            step={1}
+            aria-label="Temporal filter slider"
+          />
         </CardContent>
       </Card>
     </div>

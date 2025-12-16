@@ -1,66 +1,17 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity } from "./entities";
+import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity } from "./entities";
 import { ok, bad, notFound, isStr } from './core-utils';
 const MODULES = ['news', 'gov', 'safety', 'community', 'arts', 'transit', 'business', 'education', 'lifestyle', 'health', 'sports', 'media', 'utilities'];
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
-  app.get('/api/test', (c) => c.json({ success: true, data: { name: 'CF Workers Demo' }}));
-  // USERS
-  app.get('/api/users', async (c) => {
-    await UserEntity.ensureSeed(c.env);
-    const cq = c.req.query('cursor');
-    const lq = c.req.query('limit');
-    const page = await UserEntity.list(c.env, cq ?? null, lq ? Math.max(1, (Number(lq) | 0)) : undefined);
-    return ok(c, page);
-  });
-  app.post('/api/users', async (c) => {
-    const { name } = (await c.req.json()) as { name?: string };
-    if (!name?.trim()) return bad(c, 'name required');
-    return ok(c, await UserEntity.create(c.env, { id: crypto.randomUUID(), name: name.trim() }));
-  });
-  // CHATS
-  app.get('/api/chats', async (c) => {
-    await ChatBoardEntity.ensureSeed(c.env);
-    const cq = c.req.query('cursor');
-    const lq = c.req.query('limit');
-    const page = await ChatBoardEntity.list(c.env, cq ?? null, lq ? Math.max(1, (Number(lq) | 0)) : undefined);
-    return ok(c, page);
-  });
-  app.post('/api/chats', async (c) => {
-    const { title } = (await c.req.json()) as { title?: string };
-    if (!title?.trim()) return bad(c, 'title required');
-    const created = await ChatBoardEntity.create(c.env, { id: crypto.randomUUID(), title: title.trim(), messages: [] });
-    return ok(c, { id: created.id, title: created.title });
-  });
-  // MESSAGES
-  app.get('/api/chats/:chatId/messages', async (c) => {
-    const chat = new ChatBoardEntity(c.env, c.req.param('chatId'));
-    if (!await chat.exists()) return notFound(c, 'chat not found');
-    return ok(c, await chat.listMessages());
-  });
-  app.post('/api/chats/:chatId/messages', async (c) => {
-    const chatId = c.req.param('chatId');
-    const { userId, text } = (await c.req.json()) as { userId?: string; text?: string };
-    if (!isStr(userId) || !text?.trim()) return bad(c, 'userId and text required');
-    const chat = new ChatBoardEntity(c.env, chatId);
-    if (!await chat.exists()) return notFound(c, 'chat not found');
-    return ok(c, await chat.sendMessage(userId, text.trim()));
-  });
-  // DELETE: Users
-  app.delete('/api/users/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await UserEntity.delete(c.env, c.req.param('id')) }));
-  app.post('/api/users/deleteMany', async (c) => {
-    const { ids } = (await c.req.json()) as { ids?: string[] };
-    const list = ids?.filter(isStr) ?? [];
-    if (list.length === 0) return bad(c, 'ids required');
-    return ok(c, { deletedCount: await UserEntity.deleteMany(c.env, list), ids: list });
-  });
-  // DELETE: Chats
-  app.delete('/api/chats/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await ChatBoardEntity.delete(c.env, c.req.param('id')) }));
-  app.post('/api/chats/deleteMany', async (c) => {
-    const { ids } = (await c.req.json()) as { ids?: string[] };
-    const list = ids?.filter(isStr) ?? [];
-    if (list.length === 0) return bad(c, 'ids required');
-    return ok(c, { deletedCount: await ChatBoardEntity.deleteMany(c.env, list), ids: list });
+  // Ensure seed data on first load
+  app.use('/api/*', async (c, next) => {
+    await Promise.all([
+      UserEntity.ensureSeed(c.env),
+      ChatBoardEntity.ensureSeed(c.env),
+      QueryEntity.ensureSeed(c.env),
+    ]);
+    await next();
   });
   // FEED STATS
   app.get('/api/feeds/stats', async (c) => {
@@ -85,22 +36,23 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const { items } = await GeoEntity.list(c.env, null, 1000);
     return ok(c, items);
   });
-  app.post('/api/geo/tag', async (c) => {
-    const { feedId } = (await c.req.json()) as { feedId?: string };
-    if (!isStr(feedId)) return bad(c, 'feedId required');
-    // MOCK PIPELINE: In a real app, this would involve regex, NER, and geocoding.
-    // Here, we just generate some plausible random data for the Lehigh Valley.
-    const lat = 40.60 + (Math.random() - 0.5) * 0.2; // Centered around Allentown/Bethlehem
-    const lon = -75.47 + (Math.random() - 0.5) * 0.2;
-    const confidence = Math.random() * 0.5 + 0.4; // Confidence between 0.4 and 0.9
-    const geoData = { id: feedId, lat, lon, confidence, source: "mock-regex" };
-    const entity = new GeoEntity(c.env, feedId);
-    if (!(await entity.exists())) {
-      await GeoEntity.create(c.env, geoData);
-    } else {
-      await entity.patch(geoData);
-    }
-    return ok(c, geoData);
+  app.post('/api/entities/extract', async (c) => {
+    const { feedIds } = (await c.req.json()) as { feedIds?: string[] };
+    if (!Array.isArray(feedIds) || feedIds.length === 0) return bad(c, 'feedIds array required');
+    const results = await Promise.all(feedIds.map(async (feedId) => {
+      const lat = 40.60 + (Math.random() - 0.5) * 0.2;
+      const lon = -75.47 + (Math.random() - 0.5) * 0.2;
+      const confidence = Math.random() * 0.5 + 0.4;
+      const geoData = { id: feedId, lat, lon, confidence, source: "mock-ner" };
+      const entity = new GeoEntity(c.env, feedId);
+      if (!(await entity.exists())) {
+        await GeoEntity.create(c.env, geoData);
+      } else {
+        await entity.patch(geoData);
+      }
+      return geoData;
+    }));
+    return ok(c, { extracted: results.length });
   });
   app.get('/api/modules/config', (c) => {
     const moduleConfigs = MODULES.map(id => ({
@@ -110,5 +62,22 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       priority: 1
     }));
     return ok(c, moduleConfigs);
+  });
+  // SAVED QUERIES
+  app.get('/api/queries', async (c) => {
+    const { items } = await QueryEntity.list(c.env, null, 100);
+    return ok(c, items);
+  });
+  app.post('/api/query/save', async (c) => {
+    const { facets, velocityWindow, searchQuery } = (await c.req.json()) as any;
+    const queryData = {
+      id: crypto.randomUUID(),
+      facets: facets ?? {},
+      velocityWindow: velocityWindow ?? 24,
+      searchQuery: searchQuery ?? '',
+      createdAt: new Date().toISOString(),
+    };
+    const saved = await QueryEntity.create(c.env, queryData);
+    return ok(c, saved);
   });
 }

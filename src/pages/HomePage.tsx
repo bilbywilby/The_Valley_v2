@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Rss, Github, MapPin } from 'lucide-react';
+import { Rss, Github, MapPin, BrainCircuit } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { z } from 'zod';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -29,10 +29,10 @@ async function postVote(voteData: { id: string; voteType: 'up' | 'down' }): Prom
     body: JSON.stringify({ voteType: validatedData.voteType }),
   });
 }
-async function tagGeo(feedId: string): Promise<GeoTag> {
-  return api('/api/geo/tag', {
+async function extractEntities(feedIds: string[]): Promise<any> {
+  return api('/api/entities/extract', {
     method: 'POST',
-    body: JSON.stringify({ feedId }),
+    body: JSON.stringify({ feedIds }),
   });
 }
 export function HomePage() {
@@ -70,16 +70,10 @@ export function HomePage() {
       toast.error(error instanceof z.ZodError ? 'Invalid vote data.' : 'Failed to record vote.');
     },
   });
-  const geoTagMutation = useMutation({
-    mutationFn: tagGeo,
-    onSuccess: (newGeoTag) => {
-      queryClient.setQueryData(['geoData'], (oldData: GeoTag[] | undefined) => {
-        const existing = oldData?.find(g => g.id === newGeoTag.id);
-        if (existing) {
-          return oldData?.map(g => g.id === newGeoTag.id ? newGeoTag : g) ?? [newGeoTag];
-        }
-        return [...(oldData ?? []), newGeoTag];
-      });
+  const entityMutation = useMutation({
+    mutationFn: extractEntities,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['geoData'] });
     }
   });
   const feedsWithStats = useMemo((): FeedItemWithStats[] => {
@@ -94,12 +88,12 @@ export function HomePage() {
   const handleVote = (id: string, voteType: 'up' | 'down') => {
     voteMutation.mutate({ id, voteType });
   };
-  const handleBatchGeoTag = () => {
-    const promise = Promise.all(ALL_FEEDS.map(feed => geoTagMutation.mutateAsync(feed.id))).then(() => true);
+  const handleBatchEntityExtract = () => {
+    const promise = entityMutation.mutateAsync(ALL_FEEDS.map(f => f.id));
     toast.promise(promise, {
-        loading: 'Calibrating geospatial data for all sources...',
-        success: 'Geospatial intelligence calibrated successfully!',
-        error: 'An error occurred during geo-calibration.',
+        loading: 'Extracting entities from all sources...',
+        success: 'Entity extraction complete! Geospatial data updated.',
+        error: 'An error occurred during entity extraction.',
     });
   };
   const handleVizFilter = (category: string | null) => {
@@ -116,7 +110,7 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {isInitialLoad && (
-        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center motion-safe:animate-fade-in">
           <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         </div>
       )}
@@ -134,21 +128,21 @@ export function HomePage() {
             <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto">
               A modular civic dashboard aggregating 140+ Lehigh Valley intelligence sources across various categories.
             </p>
-            <div className="mt-8 flex justify-center items-center gap-4 flex-wrap">
+            <div className="mt-8 flex justify-center items-center gap-2 sm:gap-4 flex-wrap">
               <ExportButtons feeds={ALL_FEEDS} />
               <Button variant="outline" size="sm" asChild>
                 <a href="https://github.com/bilbywilby/The_Valley" target="_blank" rel="noopener noreferrer">
-                  <Github className="mr-2 h-4 w-4" /> Suggest a Source
+                  <Github className="mr-2 h-4 w-4" /> Suggest
                 </a>
               </Button>
-              <Button variant="outline" size="sm" onClick={handleBatchGeoTag} disabled={geoTagMutation.isPending}>
-                <MapPin className="mr-2 h-4 w-4" /> Calibrate Geospatial Overlay
+              <Button variant="outline" size="sm" onClick={handleBatchEntityExtract} disabled={entityMutation.isPending}>
+                <BrainCircuit className="mr-2 h-4 w-4" /> Extract Entities
               </Button>
               <SettingsDrawer />
             </div>
           </div>
         </header>
-        <StickySearch />
+        <StickySearch feeds={feedsWithStats} />
         <main role="main" aria-labelledby="main-header" className="flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="py-8 md:py-10 lg:py-12">
@@ -162,7 +156,7 @@ export function HomePage() {
           </div>
         </main>
         <footer className="py-8 border-t bg-background text-center text-sm text-muted-foreground">
-          <p>Built with ❤️ at Cloudflare</p>
+          <p>Built with ���️ at Cloudflare</p>
           <p className="mt-1">Data sourced from the Lehigh Valley Master Intelligence Feed project.</p>
         </footer>
         <Toaster richColors position="bottom-right" />

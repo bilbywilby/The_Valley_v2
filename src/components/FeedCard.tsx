@@ -1,4 +1,4 @@
-import { Rss, Star, ThumbsUp, ThumbsDown, CheckCircle, XCircle, MapPin, TrendingUp } from 'lucide-react';
+import { Rss, Star, ThumbsUp, ThumbsDown, CheckCircle, XCircle, MapPin, TrendingUp, Newspaper } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,18 +7,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useFeedStore } from '@/store/feed-store';
 import { FeedItemWithStats } from '@/types';
 import { cn } from '@/lib/utils';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 interface FeedCardProps {
   feed: FeedItemWithStats;
   onVote: (id: string, voteType: 'up' | 'down') => void;
   density: 'full' | 'compact';
 }
-const MOCK_DESC = 'A brief summary of the latest updates from this intelligence source will appear here.';
 const MOCK_LAST_UPDATED = new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 7);
 export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) => {
   const isFavorite = useFeedStore(state => state.present.favorites.has(feed.id));
   const toggleFavorite = useFeedStore(state => state.toggleFavorite);
+  const mockTrendData = useMemo(() => Array.from({ length: 10 }, (_, i) => ({ name: i, uv: Math.random() * (feed.stats.upvotes + 10) })), [feed.stats.upvotes]);
+  const newCount = useMemo(() => Math.floor(Math.random() * 5) + 1, []);
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('a, button')) return;
     window.open(feed.url, '_blank', 'noopener,noreferrer');
@@ -27,8 +29,6 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
     feed.stats.upvotes + feed.stats.downvotes > 0
       ? Math.round((feed.stats.upvotes / (feed.stats.upvotes + feed.stats.downvotes)) * 100)
       : -1;
-  const totalVotes = feed.stats.upvotes + feed.stats.downvotes;
-  const frequency = totalVotes > 50 ? 'High' : totalVotes > 10 ? 'Medium' : 'Low';
   const titleId = `title-${feed.id}`;
   return (
     <motion.div
@@ -51,6 +51,11 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
           if (e.key === 'Enter' || e.key === ' ') handleCardClick(e as any);
         }}
       >
+        {density === 'full' && (
+          <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+            <img src={`https://source.unsplash.com/random/400x225/?city,government&s=${feed.id}`} alt={`${feed.title} visual representation`} className="w-full h-full object-cover" loading="lazy" />
+          </div>
+        )}
         <CardHeader className={cn(density === 'compact' ? 'p-4' : 'p-6')}>
           <div className="flex justify-between items-start gap-4">
             <CardTitle id={titleId} className="text-base font-semibold text-foreground">
@@ -63,24 +68,14 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
                     variant="ghost"
                     size="icon"
                     className="flex-shrink-0 h-8 w-8"
-                    onClick={e => {
-                      e.stopPropagation();
-                      toggleFavorite(feed.id);
-                    }}
+                    onClick={e => { e.stopPropagation(); toggleFavorite(feed.id); }}
                     aria-pressed={isFavorite}
                   >
-                    <Star
-                      className={cn(
-                        'h-5 w-5 transition-colors',
-                        isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground hover:text-yellow-400'
-                      )}
-                    />
+                    <Star className={cn('h-5 w-5 transition-colors', isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground hover:text-yellow-400')} />
                     <span className="sr-only">{isFavorite ? 'Remove from favorites' : 'Add to favorites'}</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isFavorite ? 'Remove from favorites' : 'Add to favorites'}</p>
-                </TooltipContent>
+                <TooltipContent><p>{isFavorite ? 'Remove from favorites' : 'Add to favorites'}</p></TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -95,17 +90,15 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
                 <XCircle className="mr-1 h-3 w-3" /> Inactive
               </Badge>
             )}
-            {density === 'full' && feed.geo && (
-              <Badge variant="outline"><MapPin className="mr-1 h-3 w-3" /> Geo: {feed.geo.confidence.toFixed(2)}</Badge>
-            )}
-            {density === 'full' && (
-              <Badge variant="outline"><TrendingUp className="mr-1 h-3 w-3" /> Freq: {frequency}</Badge>
+            {newCount > 0 && (
+              <Badge variant="default" className="bg-primary/80 hover:bg-primary">
+                <Newspaper className="mr-1 h-3 w-3" /> New: {newCount}
+              </Badge>
             )}
           </div>
         </CardHeader>
         {density === 'full' && (
           <CardContent className="flex-grow px-6 pb-4 space-y-2">
-            <p className="text-sm text-muted-foreground">{MOCK_DESC}</p>
             <p className="text-xs text-muted-foreground">Updated {formatDistanceToNow(MOCK_LAST_UPDATED, { addSuffix: true })}</p>
           </CardContent>
         )}
@@ -138,11 +131,20 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
               )}
             </div>
           </TooltipProvider>
-          <Button asChild size="sm" variant="outline" onClick={e => e.stopPropagation()}>
-            <a href={feed.url} target="_blank" rel="noopener noreferrer">
-              <Rss className="mr-2 h-4 w-4" /> Subscribe
-            </a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="w-20 h-8" aria-label="Recent activity trend">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={mockTrendData}>
+                  <Line type="monotone" dataKey="uv" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <Button asChild size="sm" variant="outline" onClick={e => e.stopPropagation()}>
+              <a href={feed.url} target="_blank" rel="noopener noreferrer">
+                <Rss className="mr-2 h-4 w-4" /> Subscribe
+              </a>
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     </motion.div>
