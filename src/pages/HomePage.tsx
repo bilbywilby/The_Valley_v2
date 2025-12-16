@@ -1,28 +1,34 @@
 import { useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Rss, Github, MapPin, BarChartHorizontal } from 'lucide-react';
+import { Rss, Github, MapPin } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+import { z } from 'zod';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { StickySearch } from '@/components/StickySearch';
 import { FeedList } from '@/components/FeedList';
 import { ExportButtons } from '@/components/ExportButtons';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ALL_FEEDS, CATEGORIES } from '@/data/feeds';
 import { FeedStats, FeedItemWithStats, GeoTag, ModuleId } from '@/types';
 import { api } from '@/lib/api-client';
-import { ModuleSidebar } from '@/components/ModuleSidebar';
 import { useModuleStore } from '@/store/module-store';
+import { useFeedStore } from '@/store/feed-store';
+import { SettingsDrawer } from '@/components/SettingsDrawer';
+const voteSchema = z.object({
+  id: z.string().uuid(),
+  voteType: z.enum(['up', 'down']),
+});
 async function fetchFeedStats(): Promise<FeedStats[]> {
   return api('/api/feeds/stats');
 }
 async function fetchAllGeo(): Promise<GeoTag[]> {
   return api('/api/geo/all');
 }
-async function postVote({ id, voteType }: { id: string; voteType: 'up' | 'down' }): Promise<FeedStats> {
-  return api(`/api/feeds/${id}/vote`, {
+async function postVote(voteData: { id: string; voteType: 'up' | 'down' }): Promise<FeedStats> {
+  const validatedData = voteSchema.parse(voteData);
+  return api(`/api/feeds/${validatedData.id}/vote`, {
     method: 'POST',
-    body: JSON.stringify({ voteType }),
+    body: JSON.stringify({ voteType: validatedData.voteType }),
   });
 }
 async function tagGeo(feedId: string): Promise<GeoTag> {
@@ -33,8 +39,7 @@ async function tagGeo(feedId: string): Promise<GeoTag> {
 }
 export function HomePage() {
   const queryClient = useQueryClient();
-  const modules = useModuleStore(s => s.modules);
-  // Initialize module store from static data on first load
+  const density = useFeedStore(s => s.density);
   useEffect(() => {
     const initialModules = CATEGORIES.map(cat => ({
       id: cat.toLowerCase().replace(/[^a-z0-9]/g, '-') as ModuleId,
@@ -42,14 +47,12 @@ export function HomePage() {
       enabled: true,
       priority: 1,
     }));
-    // Use getState to avoid re-triggering effect if setModules was in dependency array
     useModuleStore.getState().setModules(initialModules);
   }, []);
-  // Invalidate queries when module configuration changes
   useEffect(() => {
     const unsubscribe = useModuleStore.subscribe(
       (state, prevState) => {
-        if (state.modules !== prevState.modules) {
+        if (state.present.modules !== prevState.present.modules) {
           queryClient.invalidateQueries({ queryKey: ['feedStats'] });
           queryClient.invalidateQueries({ queryKey: ['geoData'] });
         }
@@ -73,8 +76,8 @@ export function HomePage() {
       });
       toast.success('Vote counted!');
     },
-    onError: () => {
-      toast.error('Failed to record vote. Please try again.');
+    onError: (error) => {
+      toast.error(error instanceof z.ZodError ? 'Invalid vote data.' : 'Failed to record vote.');
     },
   });
   const geoTagMutation = useMutation({
@@ -102,82 +105,64 @@ export function HomePage() {
     voteMutation.mutate({ id, voteType });
   };
   const handleBatchGeoTag = async () => {
-    toast.info('Calibrating geospatial data for all feeds...');
-    const promises = ALL_FEEDS.map(feed => geoTagMutation.mutateAsync(feed.id));
-    try {
-      await Promise.all(promises);
-      toast.success('Geospatial data calibrated successfully!');
-    } catch (error) {
-      toast.error('An error occurred during geo-calibration.');
-    }
+    const promise = new Promise(async (resolve, reject) => {
+        try {
+            for (const feed of ALL_FEEDS) {
+                await geoTagMutation.mutateAsync(feed.id);
+            }
+            resolve(true);
+        } catch (error) {
+            reject(error);
+        }
+    });
+    toast.promise(promise, {
+        loading: 'Calibrating geospatial data for all feeds...',
+        success: 'Geospatial data calibrated successfully!',
+        error: 'An error occurred during geo-calibration.',
+    });
   };
-  const topModules = useMemo(() => {
-    return Object.values(modules)
-      .sort((a, b) => b.priority - a.priority)
-      .slice(0, 5);
-  }, [modules]);
   const isLoading = isLoadingStats || isLoadingGeo;
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-foreground">
-      <ModuleSidebar />
-      <div className="lg:pl-64 flex flex-col min-h-screen">
-        <ThemeToggle className="fixed top-4 right-4 z-50" />
-        <header className="py-10 md:py-16 border-b bg-background">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="flex justify-center items-center gap-4 mb-4">
-              <Rss className="h-10 w-10 text-indigo-500" />
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">
-                LV Intelligence Feed Index
-              </h1>
-            </div>
-            <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
-              140+ Categorized RSS/Atom Feeds for the Lehigh Valley Region.
-            </p>
-            <div className="mt-8 flex justify-center items-center gap-4 flex-wrap">
-              <ExportButtons feeds={ALL_FEEDS} />
-              <Button variant="outline" size="sm" asChild>
-                <a href="https://github.com/bilbywilby/The_Valley" target="_blank" rel="noopener noreferrer">
-                  <Github className="mr-2 h-4 w-4" /> Suggest a Feed
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleBatchGeoTag} disabled={geoTagMutation.isPending}>
-                <MapPin className="mr-2 h-4 w-4" /> Calibrate Geo
-              </Button>
-            </div>
-            <Card className="mt-8 max-w-md mx-auto text-left animate-fade-in">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <BarChartHorizontal className="h-4 w-4 text-muted-foreground" />
-                  Top Ranked Modules
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  {topModules.map(m => (
-                    <li key={m.id} className="flex justify-between items-center">
-                      <span className="text-muted-foreground">{m.name}</span>
-                      <span className="font-mono font-semibold text-foreground">{m.priority}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+      <ThemeToggle className="fixed top-4 right-4 z-50" />
+      <header className="py-10 md:py-16 border-b bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" id="main-header">
+          <div className="flex justify-center items-center gap-4 mb-4">
+            <Rss className="h-10 w-10 text-indigo-500" />
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">
+              LV Intelligence Feed Index
+            </h1>
           </div>
-        </header>
-        <StickySearch />
-        <main className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="py-8 md:py-10 lg:py-12">
-              <FeedList feeds={feedsWithStats} isLoading={isLoading} onVote={handleVote} />
-            </div>
+          <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
+            140+ Categorized RSS/Atom Feeds for the Lehigh Valley Region.
+          </p>
+          <div className="mt-8 flex justify-center items-center gap-4 flex-wrap">
+            <ExportButtons feeds={ALL_FEEDS} />
+            <Button variant="outline" size="sm" asChild>
+              <a href="https://github.com/bilbywilby/The_Valley" target="_blank" rel="noopener noreferrer">
+                <Github className="mr-2 h-4 w-4" /> Suggest a Feed
+              </a>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleBatchGeoTag} disabled={geoTagMutation.isPending}>
+              <MapPin className="mr-2 h-4 w-4" /> Calibrate Geo
+            </Button>
+            <SettingsDrawer />
           </div>
-        </main>
-        <footer className="py-8 border-t bg-background text-center text-sm text-muted-foreground">
-          <p>Built with ❤️ at Cloudflare</p>
-          <p className="mt-1">Data sourced from the Lehigh Valley Master Intelligence Feed project.</p>
-        </footer>
-        <Toaster richColors position="bottom-right" />
-      </div>
+        </div>
+      </header>
+      <StickySearch />
+      <main role="main" aria-labelledby="main-header" className="flex-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-8 md:py-10 lg:py-12">
+            <FeedList feeds={feedsWithStats} isLoading={isLoading} onVote={handleVote} density={density} />
+          </div>
+        </div>
+      </main>
+      <footer className="py-8 border-t bg-background text-center text-sm text-muted-foreground">
+        <p>Built with ���️ at Cloudflare</p>
+        <p className="mt-1">Data sourced from the Lehigh Valley Master Intelligence Feed project.</p>
+      </footer>
+      <Toaster richColors position="bottom-right" />
     </div>
   );
 }
