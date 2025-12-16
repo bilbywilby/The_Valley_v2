@@ -35,7 +35,9 @@ async function toggleAlerts(data: { id: string, enabled: boolean }): Promise<Sav
 function SavedQueriesSection() {
   const queryClient = useQueryClient();
   const { data: queries = [] } = useQuery({ queryKey: ['savedQueries'], queryFn: fetchQueries });
-  const { searchQuery, selectedCategory, velocityWindow } = useFeedStore(s => s.present);
+  const searchQuery = useFeedStore(s => s.present.searchQuery);
+  const selectedCategory = useFeedStore(s => s.present.selectedCategory);
+  const velocityWindow = useFeedStore(s => s.present.velocityWindow);
   const saveMutation = useMutation({
     mutationFn: saveQuery,
     onSuccess: () => {
@@ -115,7 +117,10 @@ export function SettingsDrawer() {
   const redoModule = useModuleStore(state => state.redo);
   const canUndoModule = useModuleStore(state => state.past.length > 0);
   const canRedoModule = useModuleStore(state => state.future.length > 0);
-  const moduleList = useMemo(() => Object.values(modules).sort((a, b) => b.priority - a.priority), [modules]);
+  const moduleList = useMemo(() => {
+    const vals = Object.values(modules);
+    return vals.sort((a, b) => b.priority - a.priority);
+  }, [modules]);
   const enabledCount = useMemo(() => moduleList.filter(m => m.enabled).length, [moduleList]);
   const handleClearData = () => {
     localStorage.removeItem('lv-feed-index-storage');
@@ -134,8 +139,7 @@ export function SettingsDrawer() {
     togglePrivacyMode();
     toast.success(`Duck Shield ${!privacyMode ? 'activated' : 'deactivated'}.`, {
       description: !privacyMode ? 'Analytics and remote error reporting are now disabled.' : 'Analytics and error reporting have been re-enabled.',
-      });
-    }, 1500);
+    });
   };
   const canUndo = canUndoFeed || canUndoModule;
   const canRedo = canRedoFeed || canRedoModule;
