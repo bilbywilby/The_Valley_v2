@@ -1,5 +1,5 @@
 import { IndexedEntity } from "./core-utils";
-import type { User, Chat, ChatMessage, FeedStats, GeoTag } from "@shared/types";
+import type { User, Chat, ChatMessage, FeedStats, GeoTag, CommuteIncident, GovWatchResult, CivicLayer } from "@shared/types";
 import { MOCK_CHAT_MESSAGES, MOCK_CHATS, MOCK_USERS } from "@shared/mock-data";
 // USER ENTITY
 export class UserEntity extends IndexedEntity<User> {
@@ -72,5 +72,26 @@ declare module "@shared/types" {
     lon?: number;
     confidence: number;
     source: string;
+  }
+  export interface CommuteIncident {
+    id: string;
+    type: 'accident' | 'roadwork' | 'congestion';
+    severity: 'low' | 'medium' | 'high';
+    description: string;
+    location: { lat: number; lon: number };
+    timestamp: number;
+  }
+  export interface GovWatchResult {
+    id: string;
+    document: string;
+    excerpt: string;
+    score: number;
+    date: string;
+  }
+  export interface CivicLayer {
+    id: 'parks' | 'flood-zones' | 'historic-sites';
+    name: string;
+    // In a real app, this would be a GeoJSON FeatureCollection
+    geoData: { type: string; features: any[] };
   }
 }

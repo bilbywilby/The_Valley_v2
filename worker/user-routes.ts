@@ -103,8 +103,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const id = c.req.param('id');
     const entity = new SentimentEntity(c.env, id);
     if (!(await entity.exists())) {
-      // Create a mock sentiment if it doesn't exist
-      const mockSentiment = { id, positive: Math.random() * 0.4 + 0.3 }; // 30% to 70% positive
+      const mockSentiment = { id, positive: Math.random() * 0.4 + 0.3 };
       await SentimentEntity.create(c.env, mockSentiment);
       return ok(c, mockSentiment);
     }
@@ -133,13 +132,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const { id, enabled } = (await c.req.json()) as { id: string, enabled: boolean };
     if (!isStr(id)) return bad(c, 'Query ID is required');
     const entity = new QueryEntity(c.env, id);
-    if (!(await entity.exists())) {
-      return notFound(c, 'Query not found');
-    }
-    const updated = await entity.mutate(q => ({
-      ...q,
-      alerts: { ...q.alerts, dailyDigest: !!enabled }
-    }));
+    if (!(await entity.exists())) return notFound(c, 'Query not found');
+    const updated = await entity.mutate(q => ({ ...q, alerts: { ...q.alerts, dailyDigest: !!enabled } }));
     return ok(c, updated);
   });
   app.delete('/api/query/:id', async (c) => {
@@ -147,5 +141,31 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const deleted = await QueryEntity.delete(c.env, id);
     if (!deleted) return notFound(c, 'Query not found');
     return ok(c, { id });
+  });
+  // NEW UTILITY MODULE ENDPOINTS
+  app.get('/api/commute', (c) => {
+    const mockIncidents = [
+      { id: 'inc1', type: 'accident', severity: 'high', description: 'Multi-vehicle accident on PA-22 E at Fullerton Ave.', location: { lat: 40.62, lon: -75.48 }, timestamp: Date.now() - 300000 },
+      { id: 'inc2', type: 'roadwork', severity: 'medium', description: 'Lane closure on I-78 W near exit 60 for construction.', location: { lat: 40.56, lon: -75.43 }, timestamp: Date.now() - 3600000 },
+      { id: 'inc3', type: 'congestion', severity: 'low', description: 'Heavy traffic on MacArthur Rd near Lehigh Valley Mall.', location: { lat: 40.64, lon: -75.49 }, timestamp: Date.now() - 600000 },
+    ];
+    return ok(c, mockIncidents);
+  });
+  app.get('/api/gov/search', (c) => {
+    const q = c.req.query('q');
+    if (!q) return ok(c, []);
+    const mockResults = [
+      { id: 'res1', document: 'Allentown_City_Council_Minutes_2024-04.pdf', excerpt: `...the motion to approve the new zoning variance for the downtown area passed with a 5-2 vote...`, score: 0.92, date: '2024-04-18' },
+      { id: 'res2', document: 'Bethlehem_Planning_Commission_Agenda_2024-05.pdf', excerpt: `...a public hearing is scheduled to discuss the proposed 'Greenway Extension' project...`, score: 0.85, date: '2024-05-02' },
+    ];
+    return ok(c, mockResults.filter(r => r.excerpt.toLowerCase().includes(q.toLowerCase())));
+  });
+  app.get('/api/geo/layers', (c) => {
+    const mockLayers = [
+      { id: 'parks', name: 'Parks & Rec', geoData: { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [-75.47, 40.60] }, properties: { name: 'Allentown Central Park' } }] } },
+      { id: 'flood-zones', name: 'Flood Zones', geoData: { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [-75.37, 40.61] }, properties: { name: 'Lehigh River Floodplain' } }] } },
+      { id: 'historic-sites', name: 'Historic Sites', geoData: { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [-75.37, 40.62] }, properties: { name: 'Historic Bethlehem' } }] } },
+    ];
+    return ok(c, mockLayers);
   });
 }

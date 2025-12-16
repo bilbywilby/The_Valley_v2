@@ -1,4 +1,4 @@
-import { LayoutGrid, MapPin, Menu } from 'lucide-react';
+import { LayoutGrid, MapPin, Menu, Car, Landmark, Search } from 'lucide-react';
 import { useModuleStore } from '@/store/module-store';
 import { GeoTag } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -9,64 +9,51 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
+import { CanvasPins } from './CanvasPins';
+import { CommuteOverlay } from './CommuteOverlay';
+import { GovWatchSearch } from './GovWatchSearch';
+import { CivicMapOverlay } from './CivicMapOverlay';
 async function fetchAllGeo(): Promise<GeoTag[]> {
     return api('/api/geo/all');
-}
-function drawPins(ctx: CanvasRenderingContext2D, geoData: GeoTag[], width: number, height: number, hoverPin: GeoTag | null) {
-    ctx.clearRect(0, 0, width, height);
-    const minLon = -75.8, maxLon = -75.2, minLat = 40.45, maxLat = 40.75;
-    geoData.forEach(geo => {
-      if (geo.lat === undefined || geo.lon === undefined) return;
-      const x = ((geo.lon - minLon) / (maxLon - minLon)) * width;
-      const y = ((maxLat - geo.lat) / (maxLat - minLat)) * height;
-      let color = 'rgba(239, 68, 68, 0.7)'; // Red < 0.4
-      if (geo.confidence > 0.7) color = 'rgba(34, 197, 94, 0.7)'; // Green > 0.7
-      else if (geo.confidence >= 0.4) color = 'rgba(59, 130, 246, 0.7)'; // Blue >= 0.4
-      const isHovered = hoverPin?.id === geo.id;
-      const radius = (2 + geo.confidence * 4) * (isHovered ? 1.5 : 1);
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
-      ctx.fillStyle = color;
-      ctx.fill();
-    });
 }
 function SidebarContent() {
   const modules = useModuleStore(s => s.present.modules);
   const toggleModule = useModuleStore(s => s.toggleModule);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { data: geoData = [] } = useQuery({ queryKey: ['geoData'], queryFn: fetchAllGeo });
-  const [hoverPin, setHoverPin] = useState<GeoTag | null>(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const observer = new ResizeObserver(entries => {
-        for (const entry of entries) {
-            const { width, height } = entry.contentRect;
-            canvas.width = width;
-            canvas.height = height;
-            drawPins(ctx, geoData, width, height, hoverPin);
-        }
-    });
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, [geoData, hoverPin]);
   const moduleList = useMemo(() =>
     Object.values(modules).sort((a, b) => a.name.localeCompare(b.name))
   , [modules]);
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1">
+        <div className="p-4">
+          <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Utility Modules</h3>
+          <div className="space-y-2">
+            <Sheet>
+              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Car className="mr-2 h-4 w-4" /> Commute Overlay</Button></SheetTrigger>
+              <SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Commute Overlay</SheetTitle></SheetHeader><ScrollArea><CommuteOverlay /></ScrollArea></SheetContent>
+            </Sheet>
+            <Sheet>
+              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Search className="mr-2 h-4 w-4" /> GovWatch Search</Button></SheetTrigger>
+              <SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>GovWatch Search</SheetTitle></SheetHeader><ScrollArea><GovWatchSearch /></ScrollArea></SheetContent>
+            </Sheet>
+            <Sheet>
+              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Landmark className="mr-2 h-4 w-4" /> Civic Map</Button></SheetTrigger>
+              <SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Civic Map Layers</SheetTitle></SheetHeader><ScrollArea><CivicMapOverlay /></ScrollArea></SheetContent>
+            </Sheet>
+          </div>
+        </div>
+        <Separator className="my-2" />
         <motion.div
           initial="hidden"
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.03 } } }}
           className="p-4 space-y-1 motion-reduce:transition-none"
         >
+          <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Feed Modules</h3>
           {moduleList.map((module) => (
             <motion.div
               key={module.id}
@@ -90,12 +77,12 @@ function SidebarContent() {
       </ScrollArea>
       <Separator />
       <div className="p-4 space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Geospatial Overlay Pins</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Geospatial Overlay</h3>
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <div className="aspect-video w-full bg-muted rounded-md center text-xs text-muted-foreground overflow-hidden motion-reduce:animate-none">
-                        <canvas ref={canvasRef} className="bg-slate-200/20 dark:bg-slate-900/50 w-full h-full" title="Geospatial intelligence pins for civic dashboard calibration (Green=High Confidence, Blue=Medium, Red=Low)." aria-label="Intelligence map of Lehigh Valley showing feed source confidence." />
+                        <CanvasPins geoData={geoData} title="Geospatial intelligence pins" ariaLabel="Intelligence map of Lehigh Valley" />
                     </div>
                 </TooltipTrigger>
                 <TooltipContent>
