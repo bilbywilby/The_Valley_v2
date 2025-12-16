@@ -18,13 +18,18 @@ import { usePrivacyStore } from '@/store/privacy-store';
 import { useFeedStore } from '@/store/feed-store';
 import { SettingsDrawer } from '@/components/SettingsDrawer';
 import { ModuleSidebar } from '@/components/ModuleSidebar';
+/** Lazy load the DashboardViz component for better initial page load performance. */
 const DashboardViz = lazy(() => import('@/components/DashboardViz').then(module => ({ default: module.DashboardViz })));
+/** Zod schema for validating vote payloads to ensure type safety. */
 const voteSchema = z.object({
   id: z.string(),
   voteType: z.enum(['up', 'down']),
 });
+/** API function to fetch statistics for all feeds. */
 async function fetchFeedStats(): Promise<FeedStats[]> { return api('/api/feeds/stats'); }
+/** API function to fetch geospatial data for all feeds. */
 async function fetchAllGeo(): Promise<GeoTag[]> { return api('/api/geo/all'); }
+/** API function to post a vote for a specific feed. */
 async function postVote(voteData: { id: string; voteType: 'up' | 'down' }): Promise<FeedStats> {
   const validatedData = voteSchema.parse(voteData);
   return api(`/api/feeds/${validatedData.id}/vote`, {
@@ -32,12 +37,14 @@ async function postVote(voteData: { id: string; voteType: 'up' | 'down' }): Prom
     body: JSON.stringify({ voteType: validatedData.voteType }),
   });
 }
+/** API function to trigger entity extraction for a batch of feeds. */
 async function extractEntities(feedIds: string[]): Promise<any> {
   return api('/api/entities/extract', {
     method: 'POST',
     body: JSON.stringify({ feedIds }),
   });
 }
+/** A skeleton component to show while the main visualization dashboard is loading. */
 function VizSkeleton() {
   return (
     <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 mb-8">
@@ -46,6 +53,10 @@ function VizSkeleton() {
     </div>
   );
 }
+/**
+ * The main page component for the LV Civic Intelligence Dashboard.
+ * It orchestrates data fetching, state management, and renders the primary UI layout.
+ */
 export function HomePage() {
   const queryClient = useQueryClient();
   const density = useFeedStore(s => s.present.density);
@@ -53,6 +64,7 @@ export function HomePage() {
   const privacyMode = usePrivacyStore(s => s.privacyMode);
   const setSelectedCategory = useFeedStore(s => s.setSelectedCategory);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  /** Effect to initialize modules and handle deep-linking on component mount. */
   useEffect(() => {
     const initialModules = CATEGORIES.map(cat => ({
       id: cat.toLowerCase().replace(/[^a-z0-9]/g, '-') as ModuleId,
@@ -61,20 +73,17 @@ export function HomePage() {
       priority: 1,
     }));
     setModules(initialModules);
-
-    // Handle deep links on load
     if (window.location.hash && window.location.hash.startsWith('#feed-')) {
       const element = document.getElementById(window.location.hash.substring(1));
       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-
   }, [setModules]);
   const { data: stats = [], isLoading: isLoadingStats } = useQuery({
-    queryKey: ['feedStats'],
+    queryKey: ['feedStats'] as const,
     queryFn: fetchFeedStats,
   });
   const { data: geoData = [], isLoading: isLoadingGeo } = useQuery({
-    queryKey: ['geoData'],
+    queryKey: ['geoData'] as const,
     queryFn: fetchAllGeo,
   });
   const voteMutation = useMutation({
@@ -95,6 +104,7 @@ export function HomePage() {
       queryClient.invalidateQueries({ queryKey: ['geoData'] });
     }
   });
+  /** Memoized derivation of feeds combined with their dynamic stats and geo data. */
   const feedsWithStats = useMemo((): FeedItemWithStats[] => {
     const statsMap = new Map(stats.map(s => [s.id, s]));
     const geoMap = new Map(geoData.map(g => [g.id, g]));
@@ -120,6 +130,7 @@ export function HomePage() {
     document.getElementById('feed-list-container')?.scrollIntoView({ behavior: 'smooth' });
   };
   const isLoading = isLoadingStats || isLoadingGeo;
+  /** Effect to manage the initial loading screen state. */
   useEffect(() => {
     if (!isLoading) {
       const timer = setTimeout(() => setIsInitialLoad(false), 500);

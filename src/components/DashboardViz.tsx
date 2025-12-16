@@ -1,16 +1,28 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, Sankey, Tooltip as SankeyTooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
 import { FeedItemWithStats } from '@/types';
-import { TrendingUp, Clock, Share2, Smile, Frown } from 'lucide-react';
+import { TrendingUp, Clock, Share2, Smile } from 'lucide-react';
 import { useFeedStore } from '@/store/feed-store';
+/** Props for the DashboardViz component. */
 interface DashboardVizProps {
+  /** The array of feed items with their statistics. */
   feeds: FeedItemWithStats[];
+  /** Callback function to filter feeds by category when a chart slice is clicked. */
   onFilter: (category: string | null) => void;
 }
-const COLORS = ['#A7D8E0', '#D4F1D9', '#E2E8F0', '#CBD5E1', '#a7e0d0', '#F5F9FA', '#EDF2F7'];
-const SENTIMENT_COLORS = ['#22c55e', '#ef4444', '#94a3b8']; // Green, Red, Slate
+/** Color palette for the charts, defined as a constant for type safety. */
+const COLORS = ['#A7D8E0', '#D4F1D9', '#E2E8F0', '#CBD5E1', '#a7e0d0', '#F5F9FA', '#EDF2F7'] as const;
+/** Color palette for the sentiment chart, defined as a constant. */
+const SENTIMENT_COLORS = ['#22c55e', '#ef4444', '#94a3b8'] as const; // Green, Red, Slate
+/**
+ * A custom tooltip component for Recharts to provide a consistent look and feel.
+ * @param {object} props - The props passed by Recharts.
+ * @param {boolean} props.active - Whether the tooltip is active.
+ * @param {any[]} props.payload - The data payload for the tooltip.
+ * @param {string} props.label - The label for the tooltip.
+ * @returns {JSX.Element | null} The rendered tooltip or null.
+ */
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -24,8 +36,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   }
   return null;
 };
+/**
+ * A component that renders a dashboard of visualizations based on feed data.
+ * It includes charts for category distribution, data velocity, sentiment, and entity networks.
+ * @param {DashboardVizProps} props - The component props.
+ * @returns {JSX.Element} The rendered dashboard visualization component.
+ */
 export function DashboardViz({ feeds, onFilter }: DashboardVizProps) {
   const velocityWindow = useFeedStore(s => s.present.velocityWindow);
+  /**
+   * Memoized computation of feed distribution by category.
+   * This prevents recalculation on every render unless the feeds data changes.
+   */
   const categoryData = useMemo(() => {
     const categoryCount = feeds.reduce((acc, feed) => {
       acc[feed.category] = (acc[feed.category] || 0) + 1;
@@ -35,6 +57,10 @@ export function DashboardViz({ feeds, onFilter }: DashboardVizProps) {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
   }, [feeds]);
+  /**
+   * Memoized computation of mock data velocity over a specified time window.
+   * This recalculates only when feeds or the velocity window changes.
+   */
   const velocityData = useMemo(() => {
     const data: any[] = [];
     const categories = Array.from(new Set(feeds.map(f => f.category)));
@@ -47,21 +73,25 @@ export function DashboardViz({ feeds, onFilter }: DashboardVizProps) {
     }
     return { data, categories };
   }, [feeds, velocityWindow]);
+  /** Memoized mock sentiment data. */
   const sentimentData = useMemo(() => [
     { name: 'Positive', value: Math.floor(Math.random() * 40) + 50 },
     { name: 'Negative', value: Math.floor(Math.random() * 20) + 5 },
     { name: 'Neutral', value: Math.floor(Math.random() * 15) + 10 },
-  ], []); // feeds not used in calculation
+  ], []);
+  /**
+   * Memoized computation of a mock entity network for Sankey diagram.
+   * This recalculates only when the feeds data changes.
+   */
   const networkData = useMemo(() => {
     const nodes = [
       ...Array.from(new Set(feeds.map(f => f.category))).map((name, i) => ({ name, id: i })),
     ];
-    // Aggregate flows for identical source‑target pairs (self‑loops in this mock)
     const linkMap = new Map<string, number>();
     feeds.slice(0, 20).forEach(feed => {
       const idx = nodes.findIndex(n => n.name === feed.category);
       if (idx !== -1) {
-        const key = `${idx}-${idx}`; // source‑target string
+        const key = `${idx}-${idx}`;
         const val = (feed.stats.upvotes + feed.stats.downvotes) || 1;
         linkMap.set(key, (linkMap.get(key) ?? 0) + val);
       }
@@ -72,9 +102,13 @@ export function DashboardViz({ feeds, onFilter }: DashboardVizProps) {
     });
     return { nodes, links };
   }, [feeds]);
-  const handleSliceClick = (data: any) => {
+  /**
+   * Callback to handle clicks on pie chart slices, triggering a category filter.
+   * Wrapped in useCallback to stabilize the function reference.
+   */
+  const handleSliceClick = useCallback((data: any) => {
     onFilter(data.name);
-  };
+  }, [onFilter]);
   return (
     <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 mb-8">
       <Card className="xl:col-span-2">
