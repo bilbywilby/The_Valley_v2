@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFeedStore } from '@/store/feed-store';
 import { useModuleStore } from '@/store/module-store';
 import { useMemo } from 'react';
@@ -25,6 +26,7 @@ export function SettingsDrawer() {
   const canRedoModule = useModuleStore(state => state.future.length > 0);
   const moduleList = useMemo(() => Object.values(modules).sort((a, b) => b.priority - a.priority), [modules]);
   const topModules = useMemo(() => moduleList.slice(0, 5), [moduleList]);
+  const enabledCount = useMemo(() => moduleList.filter(m => m.enabled).length, [moduleList]);
   const handleClearData = () => {
     localStorage.removeItem('lv-feed-index-storage');
     localStorage.removeItem('lv-module-storage');
@@ -70,7 +72,7 @@ export function SettingsDrawer() {
             </section>
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">Display Density</h3>
-              <ToggleGroup type="single" value={density} onValueChange={(v) => v && setDensity(v as 'full' | 'compact')} className="w-full">
+              <ToggleGroup type="single" value={density} onValueChange={(v) => v && setDensity(v as 'full' | 'compact')} className="w-full motion-reduce:scale-100">
                 <ToggleGroupItem value="full" aria-label="Full density" className="flex-1">Full</ToggleGroupItem>
                 <ToggleGroupItem value="compact" aria-label="Compact density" className="flex-1">Compact</ToggleGroupItem>
               </ToggleGroup>
@@ -83,23 +85,28 @@ export function SettingsDrawer() {
                 {topModules.map(m => (
                   <li key={m.id} className="flex justify-between items-center">
                     <span className="text-muted-foreground">{m.name}</span>
-                    <span className="font-mono font-semibold text-foreground">{m.priority}</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant={m.enabled ? "default" : "outline"}>{m.priority}</Badge>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Priority sorts list order</p></TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </li>
                 ))}
               </ul>
             </section>
             <section className="space-y-2">
-              <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                <LayoutGrid className="h-4 w-4" /> Enabled Civic Modules
+              <h3 className="text-sm font-semibold text-muted-foreground flex items-center justify-between">
+                <span className="flex items-center gap-2"><LayoutGrid className="h-4 w-4" /> Enabled Civic Modules</span>
+                <Badge variant="secondary">{enabledCount} / {moduleList.length}</Badge>
               </h3>
               <div className="space-y-1 max-h-64 overflow-y-auto pr-2">
                 {moduleList.map((module) => (
                   <div key={module.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
                     <label htmlFor={`module-toggle-${module.id}`} className="text-sm font-medium cursor-pointer pr-2">{module.name}</label>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="font-mono text-xs">{module.priority}</Badge>
-                      <Switch id={`module-toggle-${module.id}`} checked={module.enabled} onCheckedChange={() => toggleModule(module.id)} />
-                    </div>
+                    <Switch id={`module-toggle-${module.id}`} checked={module.enabled} onCheckedChange={() => toggleModule(module.id)} />
                   </div>
                 ))}
               </div>

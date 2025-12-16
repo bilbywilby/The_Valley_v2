@@ -1,4 +1,4 @@
-import { Rss, Star, ThumbsUp, ThumbsDown, CheckCircle, XCircle } from 'lucide-react';
+import { Rss, Star, ThumbsUp, ThumbsDown, CheckCircle, XCircle, MapPin, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,15 @@ import { useFeedStore } from '@/store/feed-store';
 import { FeedItemWithStats } from '@/types';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { formatDistanceToNow } from 'date-fns';
 interface FeedCardProps {
   feed: FeedItemWithStats;
   onVote: (id: string, voteType: 'up' | 'down') => void;
   density: 'full' | 'compact';
 }
+// Mock data for full density view
+const MOCK_DESC = "A brief summary of the latest updates from this intelligence source will appear here.";
+const MOCK_LAST_UPDATED = new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 7); // Randomly within last 7 days
 export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) => {
   const favorites = useFeedStore(state => state.present.favorites);
   const toggleFavorite = useFeedStore(state => state.toggleFavorite);
@@ -24,8 +28,11 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
   const healthScore = feed.stats.upvotes + feed.stats.downvotes > 0
     ? Math.round((feed.stats.upvotes / (feed.stats.upvotes + feed.stats.downvotes)) * 100)
     : -1;
+  const totalVotes = feed.stats.upvotes + feed.stats.downvotes;
+  const frequency = totalVotes > 50 ? 'High' : totalVotes > 10 ? 'Medium' : 'Low';
   const statusId = `status-${feed.id}`;
   const categoryId = `category-${feed.id}`;
+  const titleId = `title-${feed.id}`;
   return (
     <motion.div
       layout
@@ -34,14 +41,20 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.2 }}
       className="h-full motion-reduce:transform-none"
-      role="article"
-      aria-labelledby={`title-${feed.id}`}
-      aria-describedby={`${categoryId} ${statusId}`}
+      role="group"
+      aria-labelledby={titleId}
     >
-      <Card className="flex flex-col h-full hover:shadow-lg transition-shadow duration-200 cursor-pointer focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2" onClick={handleCardClick}>
+      <Card
+        className="flex flex-col h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 motion-reduce:transform-none"
+        onClick={handleCardClick}
+        tabIndex={0}
+        role="button"
+        aria-label={`Open ${feed.title} in a new tab`}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardClick(e as any); }}
+      >
         <CardHeader className={cn(density === 'compact' ? 'p-4' : 'p-6')}>
           <div className="flex justify-between items-start gap-4">
-            <CardTitle id={`title-${feed.id}`} className="text-base font-semibold text-foreground">{feed.title}</CardTitle>
+            <CardTitle id={titleId} className="text-base font-semibold text-foreground">{feed.title}</CardTitle>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -54,29 +67,36 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
               </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center gap-2 pt-2 flex-wrap">
             <Badge id={categoryId} variant="secondary">{feed.category}</Badge>
             {feed.stats.status === 'active' ? (
               <Badge id={statusId} variant="outline" className="text-green-600 border-green-200"><CheckCircle className="mr-1 h-3 w-3" /> Active</Badge>
             ) : (
               <Badge id={statusId} variant="outline" className="text-red-600 border-red-200"><XCircle className="mr-1 h-3 w-3" /> Inactive</Badge>
             )}
+            {density === 'full' && feed.geo && (
+                <Badge variant="outline"><MapPin className="mr-1 h-3 w-3" /> Geo: {feed.geo.confidence.toFixed(2)}</Badge>
+            )}
+            {density === 'full' && (
+                <Badge variant="outline"><TrendingUp className="mr-1 h-3 w-3" /> Freq: {frequency}</Badge>
+            )}
           </div>
         </CardHeader>
         {density === 'full' && (
-          <CardContent className="flex-grow px-6 pb-4">
-            <p className="text-sm text-muted-foreground truncate" title={feed.url}>{feed.url}</p>
+          <CardContent className="flex-grow px-6 pb-4 space-y-2">
+            <p className="text-sm text-muted-foreground">{MOCK_DESC}</p>
+            <p className="text-xs text-muted-foreground">Updated {formatDistanceToNow(MOCK_LAST_UPDATED, { addSuffix: true })}</p>
           </CardContent>
         )}
-        <CardFooter className={cn("flex justify-between items-center", density === 'compact' ? 'p-4 pt-0' : 'p-6 pt-0')}>
+        <CardFooter className={cn("flex justify-between items-center mt-auto", density === 'compact' ? 'p-4 pt-0' : 'p-6 pt-0')}>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onVote(feed.id, 'up'); }}><ThumbsUp className="mr-1 h-4 w-4" /> {feed.stats.upvotes}</Button>
             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onVote(feed.id, 'down'); }}><ThumbsDown className="mr-1 h-4 w-4" /> {feed.stats.downvotes}</Button>
-            {density === 'full' && healthScore >= 0 && (
+            {healthScore >= 0 && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger><div className="text-sm font-medium text-muted-foreground">{healthScore}%</div></TooltipTrigger>
-                  <TooltipContent><p>Community Health Score</p></TooltipContent>
+                  <TooltipContent><p>Community Health: {feed.stats.upvotes} up / {feed.stats.downvotes} down</p></TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}

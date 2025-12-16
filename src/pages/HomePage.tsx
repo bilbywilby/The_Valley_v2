@@ -121,7 +121,7 @@ export function HomePage() {
             <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto">
               A modular civic dashboard aggregating 140+ Lehigh Valley intelligence sources across various categories.
             </p>
-            <div className="mt-8 flex justify-center items-center gap-4 flex-wrap">
+            <div className="mt-8 flex justify-center items-center gap-2 flex-wrap">
               <ExportButtons feeds={ALL_FEEDS} />
               <Button variant="outline" size="sm" asChild>
                 <a href="https://github.com/bilbywilby/The_Valley" target="_blank" rel="noopener noreferrer">

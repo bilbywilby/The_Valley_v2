@@ -50,29 +50,34 @@ export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
   }, [feeds, searchQuery, selectedCategory, viewMode, favorites, enabledModuleIds]);
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={`skeleton-${i}`} className={cn("w-full rounded-xl", density === 'compact' ? 'h-40' : 'h-56')} />
+          <Skeleton key={`skeleton-${i}`} className={cn("w-full rounded-xl shimmer-bg", density === 'compact' ? 'h-40' : 'h-64')} />
         ))}
       </div>
     );
   }
   return (
     <>
-      <div className="sr-only" aria-live="polite" role="status">
+      <div id="search-results-count" className="sr-only" aria-live="polite" role="status">
         {`${filteredFeeds.length} feeds found.`}
       </div>
       {filteredFeeds.length === 0 ? (
-        <div className="text-center py-16 col-span-full animate-fade-in">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16 col-span-full"
+        >
           <h3 className="text-xl font-semibold text-foreground">No Feeds Found</h3>
-          <p className="text-muted-foreground mt-2">Try adjusting your search or filters, or enable more modules in Settings.</p>
-        </div>
+          <p className="text-muted-foreground mt-2">Try adjusting your search (e.g., "police") or filters, or enable more modules in Settings.</p>
+        </motion.div>
       ) : (
         <motion.div
+          layout
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 motion-reduce:transition-none"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 motion-reduce:transition-none"
         >
           <AnimatePresence>
             {filteredFeeds.map(feed => (

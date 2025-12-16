@@ -2,6 +2,7 @@ import { Search, Star, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFeedStore } from '@/store/feed-store';
 import { CATEGORIES } from '@/data/feeds';
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -20,9 +21,9 @@ export function StickySearch() {
     e.preventDefault();
     searchInputRef.current?.focus();
   }, []);
-  useHotkeys('s, /', focusSearch, { preventDefault: true });
+  useHotkeys('s, /', focusSearch, { preventDefault: true }, [focusSearch]);
   return (
-    <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-border">
+    <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-border motion-reduce:transition-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center gap-4 py-3">
           <div className="relative w-full sm:flex-1">
@@ -32,28 +33,40 @@ export function StickySearch() {
               id="feed-search"
               ref={searchInputRef}
               placeholder="Search 140+ feeds..."
-              className={cn("pl-10 w-full", density === 'compact' ? 'sm:max-w-xs' : '')}
+              className={cn("pl-10 w-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", density === 'compact' ? 'sm:max-w-xs' : '')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-describedby="search-results-count"
             />
-            <div className="sr-only" aria-live="assertive">{searchQuery ? `Searching for ${searchQuery}` : ''}</div>
           </div>
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            <Select value={selectedCategory ?? 'all'} onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}>
-              <SelectTrigger className="w-full sm:w-[200px]" aria-label="Filter by category">
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {CATEGORIES.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'all' | 'favorites')} aria-label="View mode">
-              <ToggleGroupItem value="all" aria-label="All feeds"><List className="h-4 w-4" /></ToggleGroupItem>
-              <ToggleGroupItem value="favorites" aria-label="Favorite feeds"><Star className="h-4 w-4" /></ToggleGroupItem>
-            </ToggleGroup>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Select value={selectedCategory ?? 'all'} onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}>
+                    <SelectTrigger className="w-full sm:w-[200px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" aria-label="Filter by category">
+                      <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {CATEGORIES.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TooltipTrigger>
+                <TooltipContent><p>Filter by category</p></TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'all' | 'favorites')} aria-label="View mode">
+                    <ToggleGroupItem value="all" aria-label="All feeds" className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><List className="h-4 w-4" /></ToggleGroupItem>
+                    <ToggleGroupItem value="favorites" aria-label="Favorite feeds" className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><Star className="h-4 w-4" /></ToggleGroupItem>
+                  </ToggleGroup>
+                </TooltipTrigger>
+                <TooltipContent><p>Toggle view mode</p></TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
