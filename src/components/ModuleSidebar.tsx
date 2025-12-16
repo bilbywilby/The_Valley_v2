@@ -1,4 +1,4 @@
-import { LayoutGrid, MapPin, Menu, Car, Landmark, Search } from 'lucide-react';
+import { LayoutGrid, MapPin, Menu, Car, Landmark, Search, ShoppingBag, Calendar } from 'lucide-react';
 import { useModuleStore } from '@/store/module-store';
 import { GeoTag } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,9 @@ import { CanvasPins } from './CanvasPins';
 import { CommuteOverlay } from './CommuteOverlay';
 import { GovWatchSearch } from './GovWatchSearch';
 import { CivicMapOverlay } from './CivicMapOverlay';
+import { HousingPulseOverlay } from './HousingPulseOverlay';
+import { ValleyMarketOverlay } from './ValleyMarketOverlay';
+import { UnifiedEventsOverlay } from './UnifiedEventsOverlay';
 async function fetchAllGeo(): Promise<GeoTag[]> {
     return api('/api/geo/all');
 }
@@ -43,6 +46,20 @@ function SidebarContent() {
             <Sheet>
               <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Landmark className="mr-2 h-4 w-4" /> Civic Map</Button></SheetTrigger>
               <SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Civic Map Layers</SheetTitle></SheetHeader><ScrollArea><CivicMapOverlay /></ScrollArea></SheetContent>
+            </Sheet>
+            <Sheet>
+              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><LayoutGrid className="mr-2 h-4 w-4" /> Housing Pulse</Button></SheetTrigger>
+              <SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Housing Pulse</SheetTitle></SheetHeader><ScrollArea className="p-4"><HousingPulseOverlay /></ScrollArea></SheetContent>
+            </Sheet>
+
+            <Sheet>
+              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><ShoppingBag className="mr-2 h-4 w-4" /> Valley Market</Button></SheetTrigger>
+              <SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Valley Market</SheetTitle></SheetHeader><ScrollArea className="p-4"><ValleyMarketOverlay /></ScrollArea></SheetContent>
+            </Sheet>
+
+            <Sheet>
+              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Calendar className="mr-2 h-4 w-4" /> Unified Events</Button></SheetTrigger>
+              <SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Unified Events</SheetTitle></SheetHeader><ScrollArea className="p-4"><UnifiedEventsOverlay /></ScrollArea></SheetContent>
             </Sheet>
           </div>
         </div>

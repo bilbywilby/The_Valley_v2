@@ -65,3 +65,28 @@ export interface CivicLayer {
   name: string;
   geoData: { type: string; features: any[] };
 }
+
+export interface HousingTrend {
+  id: string;
+  metric: 'price' | 'inventory';
+  value: number;
+  trend: number; // % change
+  period: string; // '1mo', '3mo', '6mo'
+}
+
+export interface MarketListing {
+  id: string;
+  title: string;
+  price: number;
+  location: string;
+  url: string;
+}
+
+export interface EventItem {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  category: 'arts' | 'civic' | 'sports';
+  url: string;
+}

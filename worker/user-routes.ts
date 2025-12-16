@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
 import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity, SentimentEntity } from "./entities";
-import { ok, bad, notFound, isStr } from './core-utils';
+import { ok, bad, notFound, isStr, HousingTrend, MarketListing, EventItem } from './core-utils';
 const MODULES = ['news', 'gov', 'safety', 'community', 'arts', 'transit', 'business', 'education', 'lifestyle', 'health', 'sports', 'media', 'utilities'];
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   // Security Headers Middleware
@@ -167,5 +167,45 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       { id: 'historic-sites', name: 'Historic Sites', geoData: { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [-75.37, 40.62] }, properties: { name: 'Historic Bethlehem' } }] } },
     ];
     return ok(c, mockLayers);
+  });
+
+  app.get('/api/economy/housing', (c) => {
+    const mockTrends: HousingTrend[] = [
+      { id: 'price-1mo', metric: 'price', value: 320000, trend: 5.2, period: '1mo' },
+      { id: 'price-3mo', metric: 'price', value: 318000, trend: 3.8, period: '3mo' },
+      { id: 'inventory-1mo', metric: 'inventory', value: 180, trend: -2.1, period: '1mo' },
+      { id: 'inventory-3mo', metric: 'inventory', value: 195, trend: -8.5, period: '3mo' },
+    ];
+    return ok(c, mockTrends);
+  });
+
+  app.get('/api/market', (c) => {
+    const mockListings: MarketListing[] = [
+      { id: 'l1', title: '2BR Allentown Condo', price: 285000, location: 'Center City', url: 'https://example.com/listing1' },
+      { id: 'l2', title: '3BR Bethlehem Townhome', price: 425000, location: 'Southside', url: 'https://example.com/listing2' },
+      { id: 'l3', title: 'Single Family Home in Easton', price: 350000, location: 'College Hill', url: 'https://example.com/listing3' },
+      { id: 'l4', title: 'Luxury Apartment Downtown', price: 2200, location: 'Allentown', url: 'https://example.com/listing4' },
+      { id: 'l5', title: 'Historic Bethlehem Property', price: 650000, location: 'Historic District', url: 'https://example.com/listing5' },
+      { id: 'l6', title: 'Suburban House with Yard', price: 410000, location: 'Lower Macungie', url: 'https://example.com/listing6' },
+      { id: 'l7', title: 'Starter Home in Whitehall', price: 295000, location: 'Whitehall', url: 'https://example.com/listing7' },
+      { id: 'l8', title: 'Loft in Easton Silk Mill', price: 315000, location: 'Easton', url: 'https://example.com/listing8' },
+      { id: 'l9', title: 'Ranch Home in Emmaus', price: 340000, location: 'Emmaus', url: 'https://example.com/listing9' },
+      { id: 'l10', title: 'New Construction in Upper Macungie', price: 550000, location: 'Upper Macungie', url: 'https://example.com/listing10' },
+      { id: 'l11', title: 'Bethlehem Twin with Updates', price: 310000, location: 'North Bethlehem', url: 'https://example.com/listing11' },
+      { id: 'l12', title: 'Allentown Row Home', price: 190000, location: 'West End', url: 'https://example.com/listing12' },
+    ];
+    return ok(c, mockListings);
+  });
+
+  app.get('/api/events', (c) => {
+    const mockEvents: EventItem[] = Array.from({ length: 20 }).map((_, i) => ({
+      id: `e${i + 1}`,
+      title: i % 3 === 0 ? 'Musikfest Performance' : (i % 3 === 1 ? 'City Council Meeting' : 'D&L Trail Hike'),
+      date: new Date(Date.now() + i * 1000 * 60 * 60 * 24).toISOString(),
+      location: i % 3 === 0 ? 'ArtsQuest' : (i % 3 === 1 ? 'Allentown City Hall' : 'Jacobsburg Park'),
+      category: i % 3 === 0 ? 'arts' : (i % 3 === 1 ? 'civic' : 'sports'),
+      url: 'https://example.com/event' + (i + 1),
+    }));
+    return ok(c, mockEvents);
   });
 }

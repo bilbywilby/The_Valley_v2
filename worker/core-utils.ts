@@ -320,3 +320,28 @@ export const ok = <T>(c: Context, data: T) => c.json({ success: true, data } as 
 export const bad = (c: Context, error: string) => c.json({ success: false, error } as ApiResponse, 400);
 export const notFound = (c: Context, error = 'not found') => c.json({ success: false, error } as ApiResponse, 404);
 export const isStr = (s: unknown): s is string => typeof s === 'string' && s.length > 0;
+
+export interface HousingTrend {
+  id: string;
+  metric: 'price' | 'inventory';
+  value: number;
+  trend: number; // % change
+  period: string; // '1mo', '3mo', '6mo'
+}
+
+export interface MarketListing {
+  id: string;
+  title: string;
+  price: number;
+  location: string;
+  url: string;
+}
+
+export interface EventItem {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  category: 'arts' | 'civic' | 'sports';
+  url: string;
+}
