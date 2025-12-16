@@ -109,3 +109,22 @@ export interface CivicResponse {
   divisions: Record<string, { name: string; officeIndices: number[] }>;
   officials: Rep[];
 }
+// New Types for Elements Pack
+export type RiverLevelStatus = 'normal' | 'action' | 'minor' | 'moderate' | 'major';
+export interface RiverStatus {
+  id: string; // e.g., 'usgs-lehigh-bethlehem'
+  name: string;
+  level: number; // in feet
+  flow: number; // in cfs
+  status: RiverLevelStatus;
+  timestamp: number;
+}
+export interface AirQuality {
+  id: string; // e.g., 'purpleair-allentown-1'
+  name: string;
+  aqi: number;
+  pm25: number;
+  temp: number; // in Fahrenheit
+  humidity: number; // in %
+  timestamp: number;
+}

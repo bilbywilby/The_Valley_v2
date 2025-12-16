@@ -3,7 +3,7 @@ import type { Env } from './core-utils';
 import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity, SentimentEntity, UserPreferenceEntity, AiSummaryEntity, CivicEntity } from "./entities";
 import { ok, bad, notFound, isStr, HousingTrend, MarketListing, EventItem } from './core-utils';
 import type { UserPreferenceState, CivicResponse, Rep } from "@shared/types";
-const MODULES = ['news', 'gov', 'safety', 'community', 'arts', 'transit', 'business', 'education', 'lifestyle', 'health', 'sports', 'media', 'utilities'];
+const MODULES = ['news', 'gov', 'safety', 'community', 'arts', 'transit', 'business', 'education', 'lifestyle', 'health', 'sports', 'media', 'utilities', 'elements'];
 /**
  * Mock JWT verification. In a real app, use a proper JWT library.
  * @param token The Authorization header value (e.g., "Bearer mock-token").
@@ -301,5 +301,29 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       url: 'https://example.com/event' + (i + 1),
     }));
     return ok(c, mockEvents);
+  });
+
+  // NEW ELEMENTS PACK ENDPOINTS
+  app.get('/api/env/river', (c) => {
+    const mockRiverData = [
+      { id: 'usgs-lehigh-bethlehem', name: 'Lehigh River at Bethlehem', level: 2.5 + Math.random(), flow: 1200 + Math.random() * 200, status: 'normal', timestamp: Date.now() - 60000 },
+      { id: 'usgs-delaware-easton', name: 'Delaware River at Easton', level: 4.1 + Math.random(), flow: 3500 + Math.random() * 500, status: 'normal', timestamp: Date.now() - 120000 },
+      { id: 'usgs-jordan-allentown', name: 'Jordan Creek at Allentown', level: 1.2 + Math.random() * 0.5, flow: 150 + Math.random() * 50, status: 'normal', timestamp: Date.now() - 180000 },
+    ];
+    // Simulate a minor flood stage event
+    if (Math.random() > 0.8) {
+      mockRiverData[0].level = 8.2;
+      mockRiverData[0].status = 'minor';
+    }
+    return ok(c, mockRiverData);
+  });
+
+  app.get('/api/env/air', (c) => {
+    const mockAirData = [
+      { id: 'pa-allentown', name: 'Allentown Station', aqi: 35 + Math.floor(Math.random() * 15), pm25: 8.2, temp: 72, humidity: 55, timestamp: Date.now() - 90000 },
+      { id: 'pa-bethlehem', name: 'Bethlehem Station', aqi: 42 + Math.floor(Math.random() * 15), pm25: 9.8, temp: 71, humidity: 58, timestamp: Date.now() - 150000 },
+      { id: 'pa-easton', name: 'Easton Station', aqi: 38 + Math.floor(Math.random() * 15), pm25: 9.1, temp: 73, humidity: 53, timestamp: Date.now() - 210000 },
+    ];
+    return ok(c, mockAirData);
   });
 }

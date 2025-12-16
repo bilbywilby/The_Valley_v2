@@ -65,6 +65,10 @@ The dashboard is designed to be fully accessible and responsive across a wide ra
 - **Feature**: New API endpoint `/api/civic/lookup` to find representatives.
 - **Feature**: Integrated RepFinder sheet into sidebar and settings.
 - **Refactor**: Enhanced mock JWT handling for user-specific data.
+### v1.2.0 - Elements Pack (2024-05-23)
+- **Feature**: Added "Elements" environmental monitoring module.
+- **Feature**: New API endpoints `/api/env/river` and `/api/env/air` for live data.
+- **Feature**: Integrated ElementsView sheet with charts and status badges.
 ### v1.0.0 - Production Launch (2024-05-21)
 - **Feature**: Full PWA implementation with offline support and installability.
 - **Feature**: Added advanced utility modules: Housing Pulse, Valley Market, and Unified Events.

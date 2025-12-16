@@ -4,7 +4,6 @@ import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginImport from "eslint-plugin-import";
-import importResolver from "eslint-import-resolver-typescript";
 export default [
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
@@ -31,7 +30,7 @@ export default [
     settings: {
       react: { version: "detect" },
       'import/resolver': {
-        typescript: importResolver,
+        typescript: {}, // Use an empty object to enable the resolver
       },
     },
     rules: {

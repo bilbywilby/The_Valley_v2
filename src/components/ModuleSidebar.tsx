@@ -1,4 +1,4 @@
-import { LayoutGrid, MapPin, Menu, Car, Landmark, Search, ShoppingBag, Calendar, Users } from 'lucide-react';
+import { LayoutGrid, MapPin, Menu, Car, Landmark, Search, ShoppingBag, Calendar, Users, Droplets } from 'lucide-react';
 import { useModuleStore } from '@/store/module-store';
 import { GeoTag } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { HousingPulseOverlay } from './HousingPulseOverlay';
 import { ValleyMarketOverlay } from './ValleyMarketOverlay';
 import { UnifiedEventsOverlay } from './UnifiedEventsOverlay';
 import { RepFinderSheet } from './RepFinderSheet';
+import { ElementsView } from './ElementsView';
 async function fetchAllGeo(): Promise<GeoTag[]> {
     return api('/api/geo/all');
 }
@@ -52,6 +53,9 @@ function SidebarContent() {
             </motion.div>
             <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
               <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><LayoutGrid className="mr-2 h-4 w-4" /> Housing Pulse</Button></SheetTrigger><SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Housing Pulse</SheetTitle></SheetHeader><ScrollArea className="p-4"><HousingPulseOverlay /></ScrollArea></SheetContent></Sheet>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><Droplets className="mr-2 h-4 w-4" /> Elements</Button></SheetTrigger><SheetContent className="w-full sm:w-[640px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Elements Pack</SheetTitle></SheetHeader><ScrollArea><ElementsView /></ScrollArea></SheetContent></Sheet>
             </motion.div>
             <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
               <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><Users className="mr-2 h-4 w-4" /> My Reps Civic Lookup</Button></SheetTrigger><SheetContent className="w-full sm:w-[520px] p-0 flex flex-col z-[60]"><SheetHeader className="p-4 border-b"><SheetTitle>My Reps Civic Lookup</SheetTitle></SheetHeader><ScrollArea><RepFinderSheet /></ScrollArea></SheetContent></Sheet>
