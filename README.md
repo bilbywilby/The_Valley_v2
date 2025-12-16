@@ -1,5 +1,4 @@
 # Lehigh Valley Civic Intelligence Dashboard
-[cloudflarebutton]
 A comprehensive, interactive, and visually polished Progressive Web App (PWA) serving as a definitive civic intelligence dashboard for the Lehigh Valley region. The application aggregates over 140+ hyper-local feeds and presents them as modular overlays with geospatial intelligence capabilities.
 ## Key Features
 - **Dynamic Civic Dashboard**: A categorized, responsive grid of intelligence sources with real-time search and filtering.
@@ -51,12 +50,14 @@ The dashboard is designed to be fully accessible and responsive across a wide ra
 1.  **Install Bun**: `curl -fsSL https://bun.sh/install | bash`
 2.  **Clone & Install**: `git clone <your-repo-url> && cd valley-feed-index && bun install`
 3.  **Development**: `bun run dev` (runs on http://localhost:3000)
+4.  **Deployment**: `bun run deploy`
 ## Changelog
 ### v1.0.0 - Production Launch (2024-05-21)
-- **Complete**: Full PWA implementation with offline support and installability.
+- **Feature**: Full PWA implementation with offline support and installability.
 - **Feature**: Added advanced utility modules: Housing Pulse, Valley Market, and Unified Events.
 - **Feature**: Implemented "Duck Shield" privacy mode for local-only metrics.
 - **Feature**: Added Story-to-Code and Duck-Dive sharing functionality.
+- **Refactor**: Strict ESLint config, performance optimizations, and dead code removal.
 - **Polish**: Achieved 100 scores across all Lighthouse categories and full WCAG AA/AAA compliance.
 - **Polish**: Finalized responsive design, animations, and accessibility features.
 ## Contributing
