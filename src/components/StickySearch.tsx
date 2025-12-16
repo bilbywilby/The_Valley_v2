@@ -49,38 +49,38 @@ export function StickySearch({ feeds }: StickySearchProps) {
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Select value={selectedCategory ?? 'all'} onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}>
+                <Select value={selectedCategory ?? 'all'} onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <SelectTrigger className="w-full sm:w-[180px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:scale-100" aria-label="Filter by category">
                         <SelectValue placeholder="Filter by category" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {CATEGORIES.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Filter by category</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                     <Select value={String(velocityWindow)} onValueChange={(v) => setVelocityWindow(Number(v) as 1 | 6 | 24)}>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Filter by category</p></TooltipContent>
+                  </Tooltip>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {CATEGORIES.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={String(velocityWindow)} onValueChange={(v) => setVelocityWindow(Number(v) as 1 | 6 | 24)}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <SelectTrigger className="w-full sm:w-[120px]" aria-label="Select time window for velocity">
                         <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                         <SelectValue placeholder="Time Window" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Last 1h</SelectItem>
-                        <SelectItem value="6">Last 6h</SelectItem>
-                        <SelectItem value="24">Last 24h</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Data Velocity Time Window</p></TooltipContent>
-                </Tooltip>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Data Velocity Time Window</p></TooltipContent>
+                  </Tooltip>
+                  <SelectContent>
+                    <SelectItem value="1">Last 1h</SelectItem>
+                    <SelectItem value="6">Last 6h</SelectItem>
+                    <SelectItem value="24">Last 24h</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'all' | 'favorites')} aria-label="View mode" className="motion-reduce:scale-100">
