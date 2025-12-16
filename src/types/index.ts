@@ -45,3 +45,23 @@ export interface ModuleConfig {
   priority: number;
   weights?: Record<string, number>;
 }
+export interface CommuteIncident {
+  id: string;
+  type: 'accident' | 'roadwork' | 'congestion';
+  severity: 'low' | 'medium' | 'high';
+  description: string;
+  location: { lat: number; lon: number };
+  timestamp: number;
+}
+export interface GovWatchResult {
+  id: string;
+  document: string;
+  excerpt: string;
+  score: number;
+  date: string;
+}
+export interface CivicLayer {
+  id: 'parks' | 'flood-zones' | 'historic-sites';
+  name: string;
+  geoData: { type: string; features: any[] };
+}
