@@ -51,16 +51,25 @@ export function DashboardViz({ feeds, onFilter }: DashboardVizProps) {
     { name: 'Positive', value: Math.floor(Math.random() * 40) + 50 },
     { name: 'Negative', value: Math.floor(Math.random() * 20) + 5 },
     { name: 'Neutral', value: Math.floor(Math.random() * 15) + 10 },
-  ], [feeds]);
+  ], []); // feeds not used in calculation
   const networkData = useMemo(() => {
     const nodes = [
       ...Array.from(new Set(feeds.map(f => f.category))).map((name, i) => ({ name, id: i })),
     ];
-    const links = feeds.slice(0, 20).map(feed => ({
-      source: nodes.findIndex(n => n.name === feed.category),
-      target: nodes.findIndex(n => n.name === feed.category), // Self-link for simplicity
-      value: (feed.stats.upvotes + feed.stats.downvotes) || 1,
-    })).filter(l => l.source !== -1 && l.target !== -1);
+    // Aggregate flows for identical source‑target pairs (self‑loops in this mock)
+    const linkMap = new Map<string, number>();
+    feeds.slice(0, 20).forEach(feed => {
+      const idx = nodes.findIndex(n => n.name === feed.category);
+      if (idx !== -1) {
+        const key = `${idx}-${idx}`; // source‑target string
+        const val = (feed.stats.upvotes + feed.stats.downvotes) || 1;
+        linkMap.set(key, (linkMap.get(key) ?? 0) + val);
+      }
+    });
+    const links = Array.from(linkMap.entries()).map(([k, v]) => {
+      const [source, target] = k.split('-').map(Number);
+      return { source, target, value: v };
+    });
     return { nodes, links };
   }, [feeds]);
   const handleSliceClick = (data: any) => {
