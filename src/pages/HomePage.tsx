@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Rss, Github, MapPin, BrainCircuit } from 'lucide-react';
+import { Rss, Github, BrainCircuit } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { z } from 'zod';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -115,7 +115,7 @@ export function HomePage() {
         </div>
       )}
       <ModuleSidebar />
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 flex flex-col min-h-screen">
         <ThemeToggle className="fixed top-4 right-4 z-50" />
         <header className="py-10 md:py-16 border-b bg-background/50 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" id="main-header">
@@ -156,8 +156,10 @@ export function HomePage() {
           </div>
         </main>
         <footer className="py-8 border-t bg-background text-center text-sm text-muted-foreground">
-          <p>Built with ���️ at Cloudflare</p>
-          <p className="mt-1">Data sourced from the Lehigh Valley Master Intelligence Feed project.</p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p>Built with ❤️ at Cloudflare</p>
+            <p className="mt-1">Data sourced from the Lehigh Valley Master Intelligence Feed project.</p>
+          </div>
         </footer>
         <Toaster richColors position="bottom-right" />
       </div>

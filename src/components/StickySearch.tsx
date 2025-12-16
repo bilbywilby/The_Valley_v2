@@ -32,8 +32,8 @@ export function StickySearch({ feeds }: StickySearchProps) {
   return (
     <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-border motion-reduce:transition-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-start gap-2 py-3">
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
+        <div className="flex flex-col items-start gap-2 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full flex-wrap">
             <div className="relative w-full sm:flex-1">
               <label htmlFor="feed-search" className="sr-only">Search feeds</label>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
@@ -84,8 +84,8 @@ export function StickySearch({ feeds }: StickySearchProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'all' | 'favorites')} aria-label="View mode" className="motion-reduce:scale-100">
-                      <ToggleGroupItem value="all" aria-label="All feeds" className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><List className="h-4 w-4" /></ToggleGroupItem>
-                      <ToggleGroupItem value="favorites" aria-label="Favorite feeds" className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><Star className="h-4 w-4" /></ToggleGroupItem>
+                      <ToggleGroupItem value="all" aria-label="All feeds" className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-3"><List className="h-4 w-4" /></ToggleGroupItem>
+                      <ToggleGroupItem value="favorites" aria-label="Favorite feeds" className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-3"><Star className="h-4 w-4" /></ToggleGroupItem>
                     </ToggleGroup>
                   </TooltipTrigger>
                   <TooltipContent><p>Toggle view mode</p></TooltipContent>

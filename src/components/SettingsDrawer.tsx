@@ -50,7 +50,7 @@ export function SettingsDrawer() {
           Settings
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:w-[400px] flex flex-col p-0">
+      <SheetContent className="z-[60] w-full sm:w-[400px] flex flex-col p-0">
         <SheetHeader className="p-4 border-b">
           <SheetTitle className="flex items-center gap-2 text-lg">
             <Settings className="h-5 w-5" />
@@ -73,8 +73,8 @@ export function SettingsDrawer() {
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">Display Density</h3>
               <ToggleGroup type="single" value={density} onValueChange={(v) => v && setDensity(v as 'full' | 'compact')} className="w-full motion-reduce:scale-100">
-<ToggleGroupItem value="full" aria-label="Full density" className="flex-1">Full</ToggleGroupItem>
-<ToggleGroupItem value="compact" aria-label="Compact density" className="flex-1">Compact</ToggleGroupItem>
+                <ToggleGroupItem value="full" aria-label="Full density" className="flex-1">Full</ToggleGroupItem>
+                <ToggleGroupItem value="compact" aria-label="Compact density" className="flex-1">Compact</ToggleGroupItem>
               </ToggleGroup>
             </section>
             <section className="space-y-2">
@@ -104,7 +104,7 @@ export function SettingsDrawer() {
               </h3>
               <div className="space-y-1 max-h-64 overflow-y-auto pr-2">
                 {moduleList.map((module) => (
-                  <div key={module.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                  <div key={module.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent min-h-[44px]">
                     <label htmlFor={`module-toggle-${module.id}`} className="text-sm font-medium cursor-pointer pr-2">{module.name}</label>
                     <Switch id={`module-toggle-${module.id}`} checked={module.enabled} onCheckedChange={() => toggleModule(module.id)} />
                   </div>

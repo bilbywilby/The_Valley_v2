@@ -71,7 +71,7 @@ function SidebarContent() {
             <motion.div
               key={module.id}
               variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
-              className="flex items-center justify-between p-2 rounded-md hover:bg-accent motion-reduce:transform-none"
+              className="flex items-center justify-between p-2 rounded-md hover:bg-accent motion-reduce:transform-none min-h-[44px]"
             >
               <label htmlFor={`module-${module.id}`} className="text-sm font-medium cursor-pointer pr-2">
                 {module.name}
@@ -117,7 +117,7 @@ export function ModuleSidebar() {
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="h-11 w-11 p-3"><Menu className="h-5 w-5" /></Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-80 p-0 flex flex-col h-full">
+          <SheetContent side="left" className="w-80 p-0 flex flex-col h-full z-50">
             <SheetHeader className="p-4 border-b">
               <SheetTitle className="text-lg font-semibold tracking-tight flex items-center gap-2">
                 <LayoutGrid className="h-5 w-5" />

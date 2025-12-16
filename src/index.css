@@ -86,5 +86,5 @@
 }
 .shimmer-bg::before {
   content: '';
-  @apply absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent;
+  @apply absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 dark:via-black/10 to-transparent;
 }
