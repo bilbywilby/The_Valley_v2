@@ -60,8 +60,8 @@ export function HomePage() {
     enabled: !!userId && userId !== 'anon',
   });
   useEffect(() => {
-    if (userPrefsData?.userPrefs.favs) {
-      const serverFavs = new Set(userPrefsData.userPrefs.favs);
+    if (userPrefsData?.userPrefs?.favs && Array.isArray(userPrefsData.userPrefs.favs)) {
+      const serverFavs = new Set<string>(userPrefsData.userPrefs.favs);
       useFeedStore.setState(state => {
         state.present.favorites = serverFavs;
       });
@@ -148,28 +148,30 @@ export function HomePage() {
             <Shield className="mr-2 h-4 w-4" /> Duck Shield Active
           </Badge>
         )}
-        <header className="py-10 md:py-16 border-b bg-background/50 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" id="main-header">
-            <div className="flex justify-center items-center gap-4 mb-4">
-              <Rss className="h-10 w-10 text-primary" />
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
-                LV Civic Intelligence Dashboard
-              </h1>
-            </div>
-            <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto">
-              A modular civic dashboard aggregating 140+ Lehigh Valley intelligence sources across various categories.
-            </p>
-            <div className="mt-8 flex justify-center items-center gap-2 sm:gap-4 flex-wrap">
-              <ExportButtons feeds={ALL_FEEDS} />
-              <Button variant="outline" size="sm" asChild>
-                <a href="https://github.com/bilbywilby/The_Valley" target="_blank" rel="noopener noreferrer">
-                  <Github className="mr-2 h-4 w-4" /> Suggest
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleBatchEntityExtract} disabled={entityMutation.isPending}>
-                <BrainCircuit className="mr-2 h-4 w-4" /> Extract Entities
-              </Button>
-              <SettingsDrawer />
+        <header>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="py-10 md:py-16 border-b bg-background/50 backdrop-blur-sm text-center" id="main-header">
+              <div className="flex justify-center items-center gap-4 mb-4">
+                <Rss className="h-10 w-10 text-primary" />
+                <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
+                  LV Civic Intelligence Dashboard
+                </h1>
+              </div>
+              <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto">
+                A modular civic dashboard aggregating 140+ Lehigh Valley intelligence sources across various categories.
+              </p>
+              <div className="mt-8 flex justify-center items-center gap-2 sm:gap-4 flex-wrap">
+                <ExportButtons feeds={ALL_FEEDS} />
+                <Button variant="outline" size="sm" asChild>
+                  <a href="https://github.com/bilbywilby/The_Valley" target="_blank" rel="noopener noreferrer">
+                    <Github className="mr-2 h-4 w-4" /> Suggest
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleBatchEntityExtract} disabled={entityMutation.isPending}>
+                  <BrainCircuit className="mr-2 h-4 w-4" /> Extract Entities
+                </Button>
+                <SettingsDrawer />
+              </div>
             </div>
           </div>
         </header>
@@ -188,10 +190,12 @@ export function HomePage() {
             </div>
           </div>
         </main>
-        <footer className="py-8 border-t bg-background text-center text-sm text-muted-foreground">
+        <footer className="bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p>Built with ❤️ at Cloudflare</p>
-            <p className="mt-1">Data sourced from the Lehigh Valley Master Intelligence Feed project.</p>
+            <div className="py-8 border-t text-center text-sm text-muted-foreground">
+              <p>Built with ❤�� at Cloudflare</p>
+              <p className="mt-1">Data sourced from the Lehigh Valley Master Intelligence Feed project.</p>
+            </div>
           </div>
         </footer>
         <Toaster richColors position="bottom-right" />

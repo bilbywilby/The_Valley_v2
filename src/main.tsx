@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       // In production, allow queries to run even if offline, relying on the service worker cache.
       // In development, stick to the default 'online' to avoid confusion.
-      networkMode: import.meta.env.DEV ? 'online' : 'always',
+      networkMode: import.meta.env.PROD ? 'always' : 'online',
     },
   },
 });

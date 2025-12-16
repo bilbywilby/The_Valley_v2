@@ -1,3 +1,4 @@
+export type { UserPreferenceState, AiSummary } from '@shared/types';
 export type FeedStatus = 'active' | 'inactive';
 export interface GeoTag {
   /** Unique identifier for the geotag, matches the feed ID */
@@ -65,7 +66,6 @@ export interface CivicLayer {
   name: string;
   geoData: { type: string; features: any[] };
 }
-
 export interface HousingTrend {
   id: string;
   metric: 'price' | 'inventory';
@@ -73,7 +73,6 @@ export interface HousingTrend {
   trend: number; // % change
   period: string; // '1mo', '3mo', '6mo'
 }
-
 export interface MarketListing {
   id: string;
   title: string;
@@ -81,7 +80,6 @@ export interface MarketListing {
   location: string;
   url: string;
 }
-
 export interface EventItem {
   id: string;
   title: string;

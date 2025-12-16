@@ -17,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { getMockToken, getUserIdFromToken } from '@/lib/auth';
 import { toast } from 'sonner';
-import { UserPreferenceState } from '@/types';
+import type { UserPreferenceState } from '@/types';
 interface SavedQuery {
   id: string;
   searchQuery: string;
