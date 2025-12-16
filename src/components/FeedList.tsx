@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 import { useFeedStore } from '@/store/feed-store';
 import { useModuleStore } from '@/store/module-store';
 import { FeedItemWithStats } from '@/types';
@@ -26,9 +27,11 @@ export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
   const selectedCategory = useFeedStore(s => s.present.selectedCategory);
   const viewMode = useFeedStore(s => s.present.viewMode);
   const favorites = useFeedStore(s => s.present.favorites);
-  const modules = useModuleStore(s => s.present.modules);
-  const enabledModuleIds = useMemo(
-    () => new Set(Object.values(modules).filter((m) => m.enabled).map((m) => m.id)),
+  // CRITICAL FIX: Use useShallow to get a stable reference to the modules object.
+  // This prevents re-renders that cause the "dispatcher is null" invalid hook call error.
+  const modules = useModuleStore(useShallow(s => s.present.modules));
+  const enabledModuleIds = useMemo(() =>
+    new Set(Object.values(modules).filter((m) => m.enabled).map((m) => m.id)),
     [modules]
   );
   const filteredFeeds = useMemo(() => {
@@ -69,7 +72,7 @@ export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
           className="text-center py-16 col-span-full"
         >
           <h3 className="text-xl font-semibold text-foreground">No Feeds Found</h3>
-          <p className="text-muted-foreground mt-2">Try adjusting your search (e.g., "police") or filters, or enable more modules in Settings.</p>
+          <p className="text-muted-foreground mt-2">Try adjusting your search (e.g., "police"), filters, or enable more modules in the sidebar.</p>
         </motion.div>
       ) : (
         <motion.div

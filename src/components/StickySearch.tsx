@@ -44,7 +44,7 @@ export function StickySearch() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Select value={selectedCategory ?? 'all'} onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}>
-                    <SelectTrigger className="w-full sm:w-[200px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" aria-label="Filter by category">
+                    <SelectTrigger className="w-full sm:w-[200px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:scale-100" aria-label="Filter by category">
                       <SelectValue placeholder="Filter by category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -59,7 +59,7 @@ export function StickySearch() {
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'all' | 'favorites')} aria-label="View mode">
+                  <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'all' | 'favorites')} aria-label="View mode" className="motion-reduce:scale-100">
                     <ToggleGroupItem value="all" aria-label="All feeds" className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><List className="h-4 w-4" /></ToggleGroupItem>
                     <ToggleGroupItem value="favorites" aria-label="Favorite feeds" className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><Star className="h-4 w-4" /></ToggleGroupItem>
                   </ToggleGroup>

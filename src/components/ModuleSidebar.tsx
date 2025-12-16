@@ -1,4 +1,5 @@
-import { LayoutGrid, MapPin, Settings, BarChart2, Menu } from 'lucide-react';
+import { LayoutGrid, MapPin } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useModuleStore } from '@/store/module-store';
 import { GeoTag } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -6,13 +7,13 @@ import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
+import { Menu } from 'lucide-react';
 async function fetchAllGeo(): Promise<GeoTag[]> {
     return api('/api/geo/all');
 }
@@ -35,7 +36,7 @@ function drawPins(ctx: CanvasRenderingContext2D, geoData: GeoTag[], width: numbe
     });
 }
 function SidebarContent() {
-  const modules = useModuleStore(s => s.present.modules);
+  const modules = useModuleStore(useShallow(s => s.present.modules));
   const toggleModule = useModuleStore(s => s.toggleModule);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { data: geoData = [] } = useQuery({ queryKey: ['geoData'], queryFn: fetchAllGeo });
@@ -54,14 +55,7 @@ function SidebarContent() {
         }
     });
     observer.observe(canvas);
-    const handleMouseMove = (event: MouseEvent) => {
-        // Simple hover effect logic can be added here if needed
-    };
-    canvas.addEventListener('mousemove', handleMouseMove);
-    return () => {
-        observer.disconnect();
-        canvas.removeEventListener('mousemove', handleMouseMove);
-    };
+    return () => observer.disconnect();
   }, [geoData, hoverPin]);
   const moduleList = useMemo(() =>
     Object.values(modules).sort((a, b) => a.name.localeCompare(b.name))
@@ -101,7 +95,7 @@ function SidebarContent() {
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <div className="aspect-video w-full bg-muted rounded-md center text-xs text-muted-foreground overflow-hidden">
+                    <div className="aspect-video w-full bg-muted rounded-md center text-xs text-muted-foreground overflow-hidden motion-reduce:animate-none">
                         <canvas ref={canvasRef} className="bg-slate-200/20 dark:bg-slate-900/50 w-full h-full" title="Geospatial intelligence pins for civic dashboard calibration (Green=High Confidence, Blue=Medium, Red=Low)." />
                     </div>
                 </TooltipTrigger>

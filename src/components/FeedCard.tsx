@@ -18,9 +18,9 @@ interface FeedCardProps {
 const MOCK_DESC = "A brief summary of the latest updates from this intelligence source will appear here.";
 const MOCK_LAST_UPDATED = new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 7); // Randomly within last 7 days
 export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) => {
-  const favorites = useFeedStore(state => state.present.favorites);
+  // CRITICAL FIX: Select primitive boolean directly instead of the whole Set.
+  const isFavorite = useFeedStore(state => state.present.favorites.has(feed.id));
   const toggleFavorite = useFeedStore(state => state.toggleFavorite);
-  const isFavorite = favorites.has(feed.id);
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('a, button')) return;
     window.open(feed.url, '_blank', 'noopener,noreferrer');
@@ -40,7 +40,7 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.2 }}
-      className="h-full motion-reduce:transform-none"
+      className="h-full motion-reduce:transform-none motion-reduce:animate-none"
       role="group"
       aria-labelledby={titleId}
     >
@@ -89,18 +89,28 @@ export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) =>
           </CardContent>
         )}
         <CardFooter className={cn("flex justify-between items-center mt-auto", density === 'compact' ? 'p-4 pt-0' : 'p-6 pt-0')}>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onVote(feed.id, 'up'); }}><ThumbsUp className="mr-1 h-4 w-4" /> {feed.stats.upvotes}</Button>
-            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onVote(feed.id, 'down'); }}><ThumbsDown className="mr-1 h-4 w-4" /> {feed.stats.downvotes}</Button>
-            {healthScore >= 0 && (
-              <TooltipProvider>
+          <TooltipProvider>
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onVote(feed.id, 'up'); }}><ThumbsUp className="mr-1 h-4 w-4" /> {feed.stats.upvotes}</Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Upvote this source</p></TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onVote(feed.id, 'down'); }}><ThumbsDown className="mr-1 h-4 w-4" /> {feed.stats.downvotes}</Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Downvote this source</p></TooltipContent>
+              </Tooltip>
+              {healthScore >= 0 && (
                 <Tooltip>
                   <TooltipTrigger><div className="text-sm font-medium text-muted-foreground">{healthScore}%</div></TooltipTrigger>
                   <TooltipContent><p>Community Health: {feed.stats.upvotes} up / {feed.stats.downvotes} down</p></TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
+              )}
+            </div>
+          </TooltipProvider>
           <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}>
             <a href={feed.url} target="_blank" rel="noopener noreferrer"><Rss className="mr-2 h-4 w-4" /> Subscribe</a>
           </Button>
