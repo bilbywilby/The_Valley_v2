@@ -1,33 +1,28 @@
-import { Settings, Undo, Redo, ChevronsLeftRight, Trash2, Search, Star, Download, BarChart2, MapPin, LayoutGrid } from 'lucide-react';
+import { Settings, Undo, Redo, Trash2, BarChart2, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useFeedStore } from '@/store/feed-store';
 import { useModuleStore } from '@/store/module-store';
 import { useMemo } from 'react';
 export function SettingsDrawer() {
-  const { density, setDensity, undo: undoFeed, redo: redoFeed, canUndo: canUndoFeed, canRedo: canRedoFeed } = useFeedStore(state => ({
-    density: state.density,
-    setDensity: state.setDensity,
-    undo: state.undo,
-    redo: state.redo,
-    canUndo: state.canUndo,
-    canRedo: state.canRedo,
-  }));
-  const { modules, toggleModule, undo: undoModule, redo: redoModule, canUndo: canUndoModule, canRedo: canRedoModule } = useModuleStore(state => ({
-    modules: state.modules,
-    toggleModule: state.toggleModule,
-    undo: state.undo,
-    redo: state.redo,
-    canUndo: state.canUndo,
-    canRedo: state.canRedo,
-  }));
+  const density = useFeedStore(state => state.present.density);
+  const setDensity = useFeedStore(state => state.setDensity);
+  const undoFeed = useFeedStore(state => state.undo);
+  const redoFeed = useFeedStore(state => state.redo);
+  const canUndoFeed = useFeedStore(state => state.past.length > 0);
+  const canRedoFeed = useFeedStore(state => state.future.length > 0);
+  const modules = useModuleStore(state => state.present.modules);
+  const toggleModule = useModuleStore(state => state.toggleModule);
+  const undoModule = useModuleStore(state => state.undo);
+  const redoModule = useModuleStore(state => state.redo);
+  const canUndoModule = useModuleStore(state => state.past.length > 0);
+  const canRedoModule = useModuleStore(state => state.future.length > 0);
   const moduleList = useMemo(() => Object.values(modules).sort((a, b) => b.priority - a.priority), [modules]);
   const topModules = useMemo(() => moduleList.slice(0, 5), [moduleList]);
   const handleClearData = () => {
@@ -35,22 +30,22 @@ export function SettingsDrawer() {
     localStorage.removeItem('lv-module-storage');
     window.location.reload();
   };
-  const canUndo = canUndoFeed() || canUndoModule();
-  const canRedo = canRedoFeed() || canRedoModule();
+  const canUndo = canUndoFeed || canUndoModule;
+  const canRedo = canRedoFeed || canRedoModule;
   const handleUndo = () => {
-    if (canUndoFeed()) undoFeed();
-    if (canUndoModule()) undoModule();
+    if (canUndoFeed) undoFeed();
+    if (canUndoModule) undoModule();
   };
   const handleRedo = () => {
-    if (canRedoFeed()) redoFeed();
-    if (canRedoModule()) redoModule();
+    if (canRedoFeed) redoFeed();
+    if (canRedoModule) redoModule();
   };
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Settings className="h-5 w-5" />
-          <span className="sr-only">Open Settings</span>
+        <Button variant="outline" size="sm">
+          <Settings className="mr-2 h-4 w-4" />
+          Settings
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:w-[400px] flex flex-col p-0">
@@ -62,7 +57,6 @@ export function SettingsDrawer() {
         </SheetHeader>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-6">
-            {/* History */}
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">History</h3>
               <div className="flex items-center gap-2">
@@ -74,7 +68,6 @@ export function SettingsDrawer() {
                 </Button>
               </div>
             </section>
-            {/* Display Density */}
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">Display Density</h3>
               <ToggleGroup type="single" value={density} onValueChange={(v) => v && setDensity(v as 'full' | 'compact')} className="w-full">
@@ -82,7 +75,6 @@ export function SettingsDrawer() {
                 <ToggleGroupItem value="compact" aria-label="Compact density" className="flex-1">Compact</ToggleGroupItem>
               </ToggleGroup>
             </section>
-            {/* Top Modules */}
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                 <BarChart2 className="h-4 w-4" /> Top Ranked Modules
@@ -96,7 +88,6 @@ export function SettingsDrawer() {
                 ))}
               </ul>
             </section>
-            {/* Module Toggles */}
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                 <LayoutGrid className="h-4 w-4" /> Enabled Modules

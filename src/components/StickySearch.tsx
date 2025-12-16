@@ -5,21 +5,22 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useFeedStore } from '@/store/feed-store';
 import { CATEGORIES } from '@/data/feeds';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 export function StickySearch() {
-  const { searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, viewMode, setViewMode, density } = useFeedStore(state => ({
-    ...state.present,
-    setSearchQuery: state.setSearchQuery,
-    setSelectedCategory: state.setSelectedCategory,
-    setViewMode: state.setViewMode,
-    density: state.density,
-  }));
+  const searchQuery = useFeedStore(state => state.present.searchQuery);
+  const selectedCategory = useFeedStore(state => state.present.selectedCategory);
+  const viewMode = useFeedStore(state => state.present.viewMode);
+  const density = useFeedStore(state => state.present.density);
+  const setSearchQuery = useFeedStore(state => state.setSearchQuery);
+  const setSelectedCategory = useFeedStore(state => state.setSelectedCategory);
+  const setViewMode = useFeedStore(state => state.setViewMode);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  useHotkeys('s, /', (e) => {
+  const focusSearch = useCallback((e: KeyboardEvent) => {
     e.preventDefault();
     searchInputRef.current?.focus();
-  }, { preventDefault: true });
+  }, []);
+  useHotkeys('s, /', focusSearch, { preventDefault: true });
   return (
     <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

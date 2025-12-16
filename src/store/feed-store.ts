@@ -4,7 +4,7 @@ import { immer } from 'zustand/middleware/immer';
 import { z } from 'zod';
 type Density = 'full' | 'compact';
 type ViewMode = 'all' | 'favorites';
-interface FeedState {
+export interface FeedState {
   searchQuery: string;
   selectedCategory: string | null;
   viewMode: ViewMode;
@@ -12,46 +12,69 @@ interface FeedState {
   density: Density;
 }
 const searchQuerySchema = z.string().max(100, "Search query is too long");
-interface FeedActions {
+export interface FeedActions {
   setSearchQuery: (query: string) => void;
   setSelectedCategory: (category: string | null) => void;
   setViewMode: (mode: ViewMode) => void;
   toggleFavorite: (id: string) => void;
-  isFavorite: (id: string) => boolean;
   setDensity: (density: Density) => void;
+  undo: () => void;
+  redo: () => void;
 }
 interface History<T> {
   past: T[];
   present: T;
   future: T[];
-  undo: () => void;
-  redo: () => void;
-  canUndo: () => boolean;
-  canRedo: () => boolean;
 }
-type FeedStore = History<FeedState> & FeedActions;
-const temporal = <T extends object>(config: (set: (fn: (state: T) => void) => void, get: () => History<T>) => T) => (
-  set: (fn: (state: History<T>) => void) => void,
-  get: () => History<T>
-): History<T> & T => {
-  const present = config(
-    (fn) => {
-      set((state) => {
-        const newPresent = { ...state.present };
-        fn(newPresent);
+export type FeedStore = History<FeedState> & FeedActions;
+const initialState: FeedState = {
+  searchQuery: '',
+  selectedCategory: null,
+  viewMode: 'all',
+  favorites: new Set<string>(),
+  density: 'full',
+};
+export const useFeedStore = create<FeedStore>()(
+  persist(
+    immer((set, get) => ({
+      past: [],
+      present: initialState,
+      future: [],
+      setSearchQuery: (query) => {
+        if (!searchQuerySchema.safeParse(query).success) return;
+        set((state) => {
+          state.past.push(state.present);
+          state.present.searchQuery = query;
+          state.future = [];
+        });
+      },
+      setSelectedCategory: (category) => set((state) => {
         state.past.push(state.present);
-        state.present = newPresent;
+        state.present.selectedCategory = category;
         state.future = [];
-      });
-    },
-    get
-  );
-  return {
-    past: [],
-    present,
-    future: [],
-    undo: () => {
-      set((state) => {
+      }),
+      setViewMode: (mode) => set((state) => {
+        state.past.push(state.present);
+        state.present.viewMode = mode;
+        state.future = [];
+      }),
+      toggleFavorite: (id) => set((state) => {
+        state.past.push(state.present);
+        const newFavorites = new Set(state.present.favorites);
+        if (newFavorites.has(id)) {
+          newFavorites.delete(id);
+        } else {
+          newFavorites.add(id);
+        }
+        state.present.favorites = newFavorites;
+        state.future = [];
+      }),
+      setDensity: (density) => set((state) => {
+        state.past.push(state.present);
+        state.present.density = density;
+        state.future = [];
+      }),
+      undo: () => set((state) => {
         if (state.past.length > 0) {
           const newPast = [...state.past];
           const newPresent = newPast.pop()!;
@@ -59,10 +82,8 @@ const temporal = <T extends object>(config: (set: (fn: (state: T) => void) => vo
           state.present = newPresent;
           state.past = newPast;
         }
-      });
-    },
-    redo: () => {
-      set((state) => {
+      }),
+      redo: () => set((state) => {
         if (state.future.length > 0) {
           const newFuture = [...state.future];
           const newPresent = newFuture.shift()!;
@@ -70,58 +91,41 @@ const temporal = <T extends object>(config: (set: (fn: (state: T) => void) => vo
           state.present = newPresent;
           state.future = newFuture;
         }
-      });
-    },
-    canUndo: () => get().past.length > 0,
-    canRedo: () => get().future.length > 0,
-    ...present,
-  };
-};
-export const useFeedStore = create<FeedStore>()(
-  persist(
-    immer(
-      temporal((set, get) => ({
-        searchQuery: '',
-        selectedCategory: null,
-        viewMode: 'all',
-        favorites: new Set<string>(),
-        density: 'full',
-        setSearchQuery: (query) => {
-          if (searchQuerySchema.safeParse(query).success) {
-            set(state => { state.searchQuery = query; });
-          }
-        },
-        setSelectedCategory: (category) => set(state => { state.selectedCategory = category; }),
-        setViewMode: (mode) => set(state => { state.viewMode = mode; }),
-        toggleFavorite: (id) => {
-          set(state => {
-            const newFavorites = new Set(state.favorites);
-            if (newFavorites.has(id)) newFavorites.delete(id);
-            else newFavorites.add(id);
-            state.favorites = newFavorites;
-          });
-        },
-        isFavorite: (id) => get().present.favorites.has(id),
-        setDensity: (density) => set(state => { state.density = density; }),
-      }))
-    ),
+      }),
+    })),
     {
       name: 'lv-feed-index-storage',
       storage: createJSONStorage(() => localStorage, {
         replacer: (key, value) => {
-          if (key === 'present' && value.favorites) {
-            return { ...value, favorites: Array.from(value.favorites as Set<string>) };
+          if (key === 'present' && value instanceof Object && 'favorites' in value) {
+            const present = value as FeedState;
+            return { ...present, favorites: Array.from(present.favorites) };
           }
           return value;
         },
         reviver: (key, value) => {
-          if (key === 'present' && value.favorites) {
-            return { ...value, favorites: new Set(value.favorites as string[]) };
+          if (key === 'present' && value instanceof Object && 'favorites' in value) {
+            const present = value as Omit<FeedState, 'favorites'> & { favorites: string[] };
+            return { ...present, favorites: new Set(present.favorites) };
           }
           return value;
         },
       }),
-      partialize: (state) => ({ present: { favorites: state.present.favorites, density: state.present.density } }),
+      partialize: (state) => ({
+        present: {
+          favorites: state.present.favorites,
+          density: state.present.density,
+        },
+      }),
+      merge: (persisted, current) => {
+        const merged = { ...current };
+        const p = persisted as Partial<FeedStore>;
+        if (p?.present) {
+            merged.present.favorites = p.present.favorites ?? new Set();
+            merged.present.density = p.present.density ?? 'full';
+        }
+        return merged;
+      },
     }
   )
 );

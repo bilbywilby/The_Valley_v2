@@ -18,27 +18,26 @@ const containerVariants = {
     opacity: 1,
     transition: {
       staggerChildren: 0.05,
-      '@media (prefers-reduced-motion: reduce)': {
-        staggerChildren: 0,
-      },
     },
   },
 };
 export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
-  const { searchQuery, selectedCategory, viewMode, favorites } = useFeedStore(s => s.present);
+  const searchQuery = useFeedStore(s => s.present.searchQuery);
+  const selectedCategory = useFeedStore(s => s.present.selectedCategory);
+  const viewMode = useFeedStore(s => s.present.viewMode);
+  const favorites = useFeedStore(s => s.present.favorites);
   const modules = useModuleStore(s => s.present.modules);
   const enabledModuleIds = useMemo(
-    () => Object.values(modules).filter((m) => m.enabled).map((m) => m.id),
+    () => new Set(Object.values(modules).filter((m) => m.enabled).map((m) => m.id)),
     [modules]
   );
   const filteredFeeds = useMemo(() => {
     const lowerCaseQuery = searchQuery.toLowerCase();
-    const enabledModulesSet = new Set(enabledModuleIds);
     return feeds
       .filter(feed => {
         if (viewMode === 'all') {
           const feedModuleId = feed.category.toLowerCase().replace(/[^a-z0-9]/g, '-');
-          return enabledModulesSet.has(feedModuleId);
+          return enabledModuleIds.has(feedModuleId);
         }
         return true;
       })
@@ -73,7 +72,7 @@ export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 motion-reduce:transition-none"
         >
           <AnimatePresence>
             {filteredFeeds.map(feed => (

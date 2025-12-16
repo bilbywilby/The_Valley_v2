@@ -7,14 +7,16 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useFeedStore } from '@/store/feed-store';
 import { FeedItemWithStats } from '@/types';
 import { cn } from '@/lib/utils';
+import React from 'react';
 interface FeedCardProps {
   feed: FeedItemWithStats;
   onVote: (id: string, voteType: 'up' | 'down') => void;
   density: 'full' | 'compact';
 }
-export function FeedCard({ feed, onVote, density }: FeedCardProps) {
-  const isFavorite = useFeedStore(state => state.present.favorites.has(feed.id));
+export const FeedCard = React.memo(({ feed, onVote, density }: FeedCardProps) => {
+  const favorites = useFeedStore(state => state.present.favorites);
   const toggleFavorite = useFeedStore(state => state.toggleFavorite);
+  const isFavorite = favorites.has(feed.id);
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('a, button')) return;
     window.open(feed.url, '_blank', 'noopener,noreferrer');
@@ -30,8 +32,8 @@ export function FeedCard({ feed, onVote, density }: FeedCardProps) {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.2, '@media (prefers-reduced-motion: reduce)': { duration: 0 } }}
-      className="h-full"
+      transition={{ duration: 0.2 }}
+      className="h-full motion-reduce:transform-none"
       role="article"
       aria-labelledby={`title-${feed.id}`}
       aria-describedby={`${categoryId} ${statusId}`}
@@ -86,4 +88,4 @@ export function FeedCard({ feed, onVote, density }: FeedCardProps) {
       </Card>
     </motion.div>
   );
-}
+});

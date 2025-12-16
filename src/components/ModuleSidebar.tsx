@@ -33,7 +33,7 @@ function drawPins(ctx: CanvasRenderingContext2D, geoData: GeoTag[], width: numbe
     });
 }
 function SidebarContent() {
-  const modules = useModuleStore(s => s.modules);
+  const modules = useModuleStore(s => s.present.modules);
   const toggleModule = useModuleStore(s => s.toggleModule);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { data: geoData = [] } = useQuery({ queryKey: ['geoData'], queryFn: fetchAllGeo });
@@ -43,18 +43,19 @@ function SidebarContent() {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         const observer = new ResizeObserver(entries => {
-            const entry = entries[0];
-            const { width, height } = entry.contentRect;
-            canvas.width = width;
-            canvas.height = height;
-            drawPins(ctx, geoData, width, height);
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect;
+                canvas.width = width;
+                canvas.height = height;
+                drawPins(ctx, geoData, width, height);
+            }
         });
         observer.observe(canvas);
         return () => observer.disconnect();
       }
     }
   }, [geoData]);
-  const moduleList = useMemo(() => 
+  const moduleList = useMemo(() =>
     Object.values(modules).sort((a, b) => b.priority - a.priority)
   , [modules]);
   return (
