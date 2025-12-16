@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 async function fetchAllGeo(): Promise<GeoTag[]> {
     return api('/api/geo/all');
@@ -54,7 +54,9 @@ function SidebarContent() {
       }
     }
   }, [geoData]);
-  const moduleList = Object.values(modules).sort((a, b) => b.priority - a.priority);
+  const moduleList = useMemo(() => 
+    Object.values(modules).sort((a, b) => b.priority - a.priority)
+  , [modules]);
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1">

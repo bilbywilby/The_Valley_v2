@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFeedStore } from '@/store/feed-store';
-import { useEnabledModuleIds } from '@/store/module-store';
+import { useModuleStore } from '@/store/module-store';
 import { FeedItemWithStats } from '@/types';
 import { FeedCard } from './FeedCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +24,11 @@ export function FeedList({ feeds, isLoading, onVote }: FeedListProps) {
   const selectedCategory = useFeedStore(s => s.selectedCategory);
   const viewMode = useFeedStore(s => s.viewMode);
   const favorites = useFeedStore(s => s.favorites);
-  const enabledModuleIds = useEnabledModuleIds();
+  const modules = useModuleStore(s => s.modules);
+  const enabledModuleIds = useMemo(
+    () => Object.values(modules).filter((m) => m.enabled).map((m) => m.id),
+    [modules]
+  );
   const filteredFeeds = useMemo(() => {
     const lowerCaseQuery = searchQuery.toLowerCase();
     // The enabledModuleIds from the store are already normalized.
@@ -61,9 +65,9 @@ export function FeedList({ feeds, isLoading, onVote }: FeedListProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={i} className="h-48 w-full rounded-xl" />
-        ))}
+{Array.from({ length: 12 }).map((_, i) => (
+  <Skeleton key={`skeleton-${i}`} className="h-48 w-full rounded-xl" />
+))}
       </div>
     );
   }
