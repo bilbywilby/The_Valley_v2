@@ -81,16 +81,16 @@ function SidebarContent() {
       </ScrollArea>
       <Separator />
       <div className="p-4 space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Geo Pins</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Geospatial Overlay Pins</h3>
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <div className="aspect-video w-full bg-muted rounded-md center text-xs text-muted-foreground overflow-hidden">
-                        <canvas ref={canvasRef} className="bg-slate-200/20 dark:bg-slate-900/50 w-full h-full" title="Geospatial distribution of feeds. Green=High Confidence, Blue=Medium, Red=Low." />
+                        <canvas ref={canvasRef} className="bg-slate-200/20 dark:bg-slate-900/50 w-full h-full" title="Geospatial intelligence pins for civic dashboard calibration (Green=High Confidence, Blue=Medium, Red=Low)." />
                     </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Geospatial distribution of feeds</p>
+                    <p>Civic geospatial intelligence overlay visualization.</p>
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>
@@ -100,7 +100,7 @@ function SidebarContent() {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild><Button variant="ghost" size="icon" className="flex-1"><BarChart2 className="h-5 w-5" /></Button></TooltipTrigger>
-            <TooltipContent side="right"><p>Impact Ranking</p></TooltipContent>
+            <TooltipContent side="right"><p>Civic Impact Ranking</p></TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild><Button variant="ghost" size="icon" className="flex-1"><Settings className="h-5 w-5" /></Button></TooltipTrigger>
@@ -125,7 +125,7 @@ export function ModuleSidebar() {
             <SheetHeader className="p-4 border-b">
               <SheetTitle className="text-lg font-semibold tracking-tight flex items-center gap-2">
                 <LayoutGrid className="h-5 w-5" />
-                <span>Dashboard Modules</span>
+                <span>Civic Intelligence Modules</span>
               </SheetTitle>
             </SheetHeader>
             <SidebarContent />
@@ -139,7 +139,7 @@ export function ModuleSidebar() {
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
           <LayoutGrid className="h-5 w-5" />
-          <span>Dashboard Modules</span>
+          <span>Civic Intelligence Modules</span>
         </h2>
       </div>
       <SidebarContent />

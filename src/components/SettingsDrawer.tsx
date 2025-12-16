@@ -77,7 +77,7 @@ export function SettingsDrawer() {
             </section>
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                <BarChart2 className="h-4 w-4" /> Top Ranked Modules
+                <BarChart2 className="h-4 w-4" /> Top Civic Modules
               </h3>
               <ul className="space-y-2 text-sm">
                 {topModules.map(m => (
@@ -90,7 +90,7 @@ export function SettingsDrawer() {
             </section>
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                <LayoutGrid className="h-4 w-4" /> Enabled Modules
+                <LayoutGrid className="h-4 w-4" /> Enabled Civic Modules
               </h3>
               <div className="space-y-1 max-h-64 overflow-y-auto pr-2">
                 {moduleList.map((module) => (

@@ -5,7 +5,7 @@ export interface GeoTag {
   lat?: number;
   lon?: number;
   confidence: number;
-  /** The source of the geo data (e.g., 'mock-regex', 'ner-pipeline') */
+  /** The source of the geo data (e.g., 'civic-regex', 'intelligence-pipeline') */
   source: string;
 }
 export interface FeedItem {

@@ -99,8 +99,8 @@ export function HomePage() {
     const promise = Promise.all(ALL_FEEDS.map(feed => geoTagMutation.mutateAsync(feed.id)))
       .then(() => true);
     toast.promise(promise, {
-        loading: 'Calibrating geospatial data for all feeds...',
-        success: 'Geospatial data calibrated successfully!',
+        loading: 'Calibrating geospatial data for all sources...',
+        success: 'Geospatial intelligence calibrated successfully!',
         error: 'An error occurred during geo-calibration.',
     });
   };
@@ -115,21 +115,21 @@ export function HomePage() {
             <div className="flex justify-center items-center gap-4 mb-4">
               <Rss className="h-10 w-10 text-indigo-500" />
               <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">
-                LV Intelligence Feed Index
+                LV Civic Intelligence Dashboard
               </h1>
             </div>
-            <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
-              140+ Categorized RSS/Atom Feeds for the Lehigh Valley Region.
+            <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto">
+              A modular civic dashboard aggregating 140+ Lehigh Valley intelligence sources across various categories.
             </p>
             <div className="mt-8 flex justify-center items-center gap-4 flex-wrap">
               <ExportButtons feeds={ALL_FEEDS} />
               <Button variant="outline" size="sm" asChild>
                 <a href="https://github.com/bilbywilby/The_Valley" target="_blank" rel="noopener noreferrer">
-                  <Github className="mr-2 h-4 w-4" /> Suggest a Feed
+                  <Github className="mr-2 h-4 w-4" /> Suggest a Source
                 </a>
               </Button>
               <Button variant="outline" size="sm" onClick={handleBatchGeoTag} disabled={geoTagMutation.isPending}>
-                <MapPin className="mr-2 h-4 w-4" /> Calibrate Geo
+                <MapPin className="mr-2 h-4 w-4" /> Calibrate Geospatial Overlay
               </Button>
               <SettingsDrawer />
             </div>
