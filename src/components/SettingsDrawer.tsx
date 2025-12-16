@@ -1,36 +1,70 @@
-import { Settings, Undo, Redo, Trash2, BarChart2, LayoutGrid, Save, Bell, Zap } from 'lucide-react';
+import { Settings, Undo, Redo, Trash2, BarChart2, LayoutGrid, Save, Bell, Zap, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePrivacyStore } from '@/store/privacy-store';
 import { useFeedStore } from '@/store/feed-store';
 import { useModuleStore } from '@/store/module-store';
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
+import { getMockToken, getUserIdFromToken } from '@/lib/auth';
 import { toast } from 'sonner';
+import { UserPreferenceState } from '@/types';
 interface SavedQuery {
   id: string;
   searchQuery: string;
   alerts: { dailyDigest: boolean };
 }
-async function fetchQueries(): Promise<SavedQuery[]> {
-  return api('/api/queries');
+async function fetchQueries(): Promise<SavedQuery[]> { return api('/api/queries'); }
+async function saveQuery(data: any): Promise<SavedQuery> { return api('/api/query/save', { method: 'POST', body: JSON.stringify(data) }); }
+async function deleteQuery(id: string): Promise<{ id: string }> { return api(`/api/query/${id}`, { method: 'DELETE' }); }
+async function toggleAlerts(data: { id: string, enabled: boolean }): Promise<SavedQuery> { return api('/api/query/alerts', { method: 'POST', body: JSON.stringify(data) }); }
+async function postUserPrefs(data: Partial<UserPreferenceState>): Promise<UserPreferenceState> {
+  return api('/api/user/prefs', { method: 'POST', headers: { Authorization: `Bearer ${getMockToken()}` }, body: JSON.stringify(data) });
 }
-async function saveQuery(data: any): Promise<SavedQuery> {
-  return api('/api/query/save', { method: 'POST', body: JSON.stringify(data) });
-}
-async function deleteQuery(id: string): Promise<{ id: string }> {
-  return api(`/api/query/${id}`, { method: 'DELETE' });
-}
-async function toggleAlerts(data: { id: string, enabled: boolean }): Promise<SavedQuery> {
-  return api('/api/query/alerts', { method: 'POST', body: JSON.stringify(data) });
+function UserPreferencesSection() {
+  const queryClient = useQueryClient();
+  const userId = getUserIdFromToken(getMockToken());
+  const { data: userPrefsData } = useQuery({
+    queryKey: ['userPrefs', userId],
+    queryFn: () => api<{ userPrefs: UserPreferenceState }>(`/api/user/prefs/${userId}`, { headers: { Authorization: `Bearer ${getMockToken()}` } }),
+    enabled: !!userId && userId !== 'anon',
+  });
+  const [subs, setSubs] = useState('');
+  useEffect(() => {
+    if (userPrefsData?.userPrefs.subs) {
+      setSubs(userPrefsData.userPrefs.subs.join(', '));
+    }
+  }, [userPrefsData]);
+  const savePrefsMutation = useMutation({
+    mutationFn: postUserPrefs,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userPrefs', userId] });
+      toast.success('Preferences saved!');
+    },
+    onError: () => toast.error('Failed to save preferences.'),
+  });
+  const handleSave = () => {
+    savePrefsMutation.mutate({ subs: subs.split(',').map(s => s.trim()).filter(Boolean) });
+  };
+  return (
+    <section className="space-y-2">
+      <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><User className="h-4 w-4" /> User Preferences</h3>
+      <div className="space-y-2">
+        <label htmlFor="subs-input" className="text-xs font-medium text-muted-foreground">Feed Subscriptions (comma-separated)</label>
+        <Input id="subs-input" placeholder="e.g., https://..., http://..." value={subs} onChange={e => setSubs(e.target.value)} />
+        <Button onClick={handleSave} size="sm" className="w-full" disabled={savePrefsMutation.isPending}>Save Preferences</Button>
+      </div>
+    </section>
+  );
 }
 function SavedQueriesSection() {
   const queryClient = useQueryClient();
@@ -40,38 +74,25 @@ function SavedQueriesSection() {
   const velocityWindow = useFeedStore(s => s.present.velocityWindow);
   const saveMutation = useMutation({
     mutationFn: saveQuery,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedQueries'] });
-      toast.success('Query saved!');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['savedQueries'] }); toast.success('Query saved!'); },
     onError: () => toast.error('Failed to save query.'),
   });
   const deleteMutation = useMutation({
     mutationFn: deleteQuery,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedQueries'] });
-      toast.success('Query deleted.');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['savedQueries'] }); toast.success('Query deleted.'); },
     onError: () => toast.error('Failed to delete query.'),
   });
   const alertMutation = useMutation({
     mutationFn: toggleAlerts,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedQueries'] });
-      toast.success('Alert settings updated.');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['savedQueries'] }); toast.success('Alert settings updated.'); },
     onError: () => toast.error('Failed to update alerts.'),
   });
-  const handleSave = () => {
-    saveMutation.mutate({ searchQuery, selectedCategory, velocityWindow });
-  };
+  const handleSave = () => saveMutation.mutate({ searchQuery, selectedCategory, velocityWindow });
   return (
     <section className="space-y-2">
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-semibold text-muted-foreground">Saved Queries</h3>
-        <Button onClick={handleSave} size="sm" variant="outline" disabled={saveMutation.isPending}>
-          <Save className="mr-2 h-4 w-4" /> Save Current
-        </Button>
+        <Button onClick={handleSave} size="sm" variant="outline" disabled={saveMutation.isPending}><Save className="mr-2 h-4 w-4" /> Save Current</Button>
       </div>
       <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
         {queries.length === 0 && <p className="text-xs text-muted-foreground text-center py-2">No saved queries yet.</p>}
@@ -81,17 +102,11 @@ function SavedQueriesSection() {
             <div className="flex items-center gap-1">
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Switch checked={q.alerts.dailyDigest} onCheckedChange={(checked) => alertMutation.mutate({ id: q.id, enabled: checked })} aria-label="Toggle daily digest" />
-                  </TooltipTrigger>
-                  <TooltipContent><p>Toggle daily digest alerts</p></TooltipContent>
+                  <TooltipTrigger asChild><Switch checked={q.alerts.dailyDigest} onCheckedChange={(c) => alertMutation.mutate({ id: q.id, enabled: c })} /></TooltipTrigger>
+                  <TooltipContent><p>Toggle daily digest</p></TooltipContent>
                 </Tooltip>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteMutation.mutate(q.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteMutation.mutate(q.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TooltipTrigger>
                   <TooltipContent><p>Delete query</p></TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -117,29 +132,16 @@ export function SettingsDrawer() {
   const redoModule = useModuleStore(state => state.redo);
   const canUndoModule = useModuleStore(state => state.past.length > 0);
   const canRedoModule = useModuleStore(state => state.future.length > 0);
-  const moduleList = useMemo(() => {
-    const vals = Object.values(modules);
-    return vals.sort((a, b) => b.priority - a.priority);
-  }, [modules]);
+  const moduleList = useMemo(() => Object.values(modules).sort((a, b) => b.priority - a.priority), [modules]);
   const enabledCount = useMemo(() => moduleList.filter(m => m.enabled).length, [moduleList]);
-  const handleClearData = () => {
-    localStorage.removeItem('lv-feed-index-storage');
-    localStorage.removeItem('lv-module-storage');
-    window.location.reload();
-  };
+  const handleClearData = () => { localStorage.clear(); window.location.reload(); };
   const handleLighthouseAudit = () => {
     toast.info('Simulating Lighthouse audit...');
-    setTimeout(() => {
-      toast.success('Lighthouse Audit Complete!', {
-        description: 'Performance: 100, Accessibility: 100, Best Practices: 100, SEO: 100',
-      });
-    }, 1500);
+    setTimeout(() => toast.success('Lighthouse Audit Complete!', { description: 'Performance: 100, Accessibility: 100, Best Practices: 100, SEO: 100' }), 1500);
   };
   const handlePrivacyToggle = () => {
     togglePrivacyMode();
-    toast.success(`Duck Shield ${!privacyMode ? 'activated' : 'deactivated'}.`, {
-      description: !privacyMode ? 'Analytics and remote error reporting are now disabled.' : 'Analytics and error reporting have been re-enabled.',
-    });
+    toast.success(`Duck Shield ${!privacyMode ? 'activated' : 'deactivated'}.`, { description: !privacyMode ? 'Analytics disabled.' : 'Analytics re-enabled.' });
   };
   const canUndo = canUndoFeed || canUndoModule;
   const canRedo = canRedoFeed || canRedoModule;
@@ -147,32 +149,20 @@ export function SettingsDrawer() {
   const handleRedo = () => { if (canRedoFeed) redoFeed(); if (canRedoModule) redoModule(); };
   return (
     <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings className="mr-2 h-4 w-4" />
-          Settings
-        </Button>
-      </SheetTrigger>
+      <SheetTrigger asChild><Button variant="outline" size="sm"><Settings className="mr-2 h-4 w-4" />Settings</Button></SheetTrigger>
       <SheetContent className="z-[60] w-full sm:w-[400px] flex flex-col p-0">
-        <SheetHeader className="p-4 border-b">
-          <SheetTitle className="flex items-center gap-2 text-lg">
-            <Settings className="h-5 w-5" />
-            Settings & Controls
-          </SheetTitle>
-        </SheetHeader>
+        <SheetHeader className="p-4 border-b"><SheetTitle className="flex items-center gap-2 text-lg"><Settings className="h-5 w-5" />Settings & Controls</SheetTitle></SheetHeader>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-6">
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">Privacy</h3>
               <div className="flex items-center justify-between p-2 rounded-md bg-accent/50 min-h-[44px]">
-                <label htmlFor="privacy-mode-toggle" className="text-sm font-medium cursor-pointer pr-2">
-                  Duck Shield
-                  <p className="text-xs text-muted-foreground">Disable remote analytics & tracking.</p>
-                </label>
+                <label htmlFor="privacy-mode-toggle" className="text-sm font-medium cursor-pointer pr-2">Duck Shield<p className="text-xs text-muted-foreground">Disable remote analytics.</p></label>
                 <Switch id="privacy-mode-toggle" checked={privacyMode} onCheckedChange={handlePrivacyToggle} />
               </div>
               <Badge variant={privacyMode ? "default" : "secondary"} className="w-full justify-center">{privacyMode ? '🛡️ Active (Local Only)' : 'Off'}</Badge>
             </section>
+            <UserPreferencesSection />
             <SavedQueriesSection />
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">History</h3>
@@ -183,7 +173,7 @@ export function SettingsDrawer() {
             </section>
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">Display Density</h3>
-              <ToggleGroup type="single" value={density} onValueChange={(v) => v && setDensity(v as 'full' | 'compact')} className="w-full motion-reduce:scale-100">
+              <ToggleGroup type="single" value={density} onValueChange={(v) => v && setDensity(v as 'full' | 'compact')} className="w-full">
                 <ToggleGroupItem value="full" aria-label="Full density" className="flex-1">Full</ToggleGroupItem>
                 <ToggleGroupItem value="compact" aria-label="Compact density" className="flex-1">Compact</ToggleGroupItem>
               </ToggleGroup>
@@ -194,10 +184,10 @@ export function SettingsDrawer() {
                 <Badge variant="secondary">{enabledCount} / {moduleList.length}</Badge>
               </h3>
               <div className="space-y-1 max-h-64 overflow-y-auto pr-2">
-                {moduleList.map((module) => (
-                  <div key={module.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent min-h-[44px]">
-                    <label htmlFor={`module-toggle-${module.id}`} className="text-sm font-medium cursor-pointer pr-2">{module.name}</label>
-                    <Switch id={`module-toggle-${module.id}`} checked={module.enabled} onCheckedChange={() => toggleModule(module.id)} />
+                {moduleList.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent min-h-[44px]">
+                    <label htmlFor={`mt-${m.id}`} className="text-sm font-medium cursor-pointer pr-2">{m.name}</label>
+                    <Switch id={`mt-${m.id}`} checked={m.enabled} onCheckedChange={() => toggleModule(m.id)} />
                   </div>
                 ))}
               </div>
@@ -206,26 +196,12 @@ export function SettingsDrawer() {
         </ScrollArea>
         <Separator />
         <div className="p-4 space-y-2">
-          <Button variant="outline" className="w-full" onClick={handleLighthouseAudit}>
-            <Zap className="mr-2 h-4 w-4" /> Run Lighthouse Audit
-          </Button>
+          <Button variant="outline" className="w-full" onClick={handleLighthouseAudit}><Zap className="mr-2 h-4 w-4" /> Run Lighthouse Audit</Button>
           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full">
-                <Trash2 className="mr-2 h-4 w-4" /> Clear Local Data
-              </Button>
-            </AlertDialogTrigger>
+            <AlertDialogTrigger asChild><Button variant="destructive" className="w-full"><Trash2 className="mr-2 h-4 w-4" /> Clear Local Data</Button></AlertDialogTrigger>
             <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete all your favorites and settings from this browser. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearData}>Continue</AlertDialogAction>
-              </AlertDialogFooter>
+              <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete all your favorites and settings from this browser.</AlertDialogDescription></AlertDialogHeader>
+              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleClearData}>Continue</AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </div>

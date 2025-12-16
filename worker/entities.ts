@@ -1,5 +1,5 @@
 import { IndexedEntity } from "./core-utils";
-import type { User, Chat, ChatMessage, FeedStats, GeoTag, CommuteIncident, GovWatchResult, CivicLayer } from "@shared/types";
+import type { User, Chat, ChatMessage, FeedStats, GeoTag, CommuteIncident, GovWatchResult, CivicLayer, UserPreferenceState, AiSummary } from "@shared/types";
 import { MOCK_CHAT_MESSAGES, MOCK_CHATS, MOCK_USERS } from "@shared/mock-data";
 // USER ENTITY
 export class UserEntity extends IndexedEntity<User> {
@@ -58,6 +58,19 @@ export class SentimentEntity extends IndexedEntity<Sentiment> {
     static readonly indexName = "sentiments";
     static readonly initialState: Sentiment = { id: "", positive: 0.5 };
 }
+// USER PREFERENCE ENTITY
+export class UserPreferenceEntity extends IndexedEntity<UserPreferenceState> {
+  static readonly entityName = "user-prefs";
+  static readonly indexName = "user-prefs-index";
+  static readonly initialState: UserPreferenceState = { id: '', subs: [], favs: [], geoAlerts: [] };
+  static seedData = [{ id: 'demo-user', subs: [], favs: [], geoAlerts: [] }];
+}
+// AI SUMMARY ENTITY
+export class AiSummaryEntity extends IndexedEntity<AiSummary> {
+  static readonly entityName = "ai-summary";
+  static readonly indexName = "ai-summaries";
+  static readonly initialState: AiSummary = { id: '', narrative: '', cachedAt: 0, ttl: 0 };
+}
 // Add types to shared module
 declare module "@shared/types" {
   export interface FeedStats {
@@ -91,7 +104,18 @@ declare module "@shared/types" {
   export interface CivicLayer {
     id: 'parks' | 'flood-zones' | 'historic-sites';
     name: string;
-    // In a real app, this would be a GeoJSON FeatureCollection
     geoData: { type: string; features: any[] };
+  }
+  export interface UserPreferenceState {
+    id: string;
+    subs: string[];
+    favs: string[];
+    geoAlerts: GeoTag[];
+  }
+  export interface AiSummary {
+    id: string;
+    narrative: string;
+    cachedAt: number;
+    ttl: number;
   }
 }

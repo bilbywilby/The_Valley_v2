@@ -1,8 +1,20 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity, SentimentEntity } from "./entities";
+import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity, SentimentEntity, UserPreferenceEntity, AiSummaryEntity } from "./entities";
 import { ok, bad, notFound, isStr, HousingTrend, MarketListing, EventItem } from './core-utils';
+import type { UserPreferenceState } from "@shared/types";
 const MODULES = ['news', 'gov', 'safety', 'community', 'arts', 'transit', 'business', 'education', 'lifestyle', 'health', 'sports', 'media', 'utilities'];
+/**
+ * Mock JWT verification. In a real app, use a proper JWT library.
+ * @param token The Authorization header value (e.g., "Bearer mock-token").
+ * @returns The user ID from the token, or 'anon'.
+ */
+function mockVerifyJWT(token: string | undefined): string {
+  if (!token) return 'anon';
+  const parts = token.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return 'anon';
+  return parts[1]?.split('.')[0] || 'anon';
+};
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   // Security Headers Middleware
   app.use('/api/*', async (c, next) => {
@@ -20,8 +32,65 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       UserEntity.ensureSeed(c.env),
       ChatBoardEntity.ensureSeed(c.env),
       QueryEntity.ensureSeed(c.env),
+      UserPreferenceEntity.ensureSeed(c.env),
     ]);
     await next();
+  });
+  // USER PREFERENCES (Protected Routes)
+  app.get('/api/user/prefs/:userId', async (c) => {
+    const auth = c.req.header('Authorization');
+    const authUserId = mockVerifyJWT(auth);
+    const reqUserId = c.req.param('userId');
+    if (authUserId !== reqUserId) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const entity = new UserPreferenceEntity(c.env, reqUserId);
+    if (!(await entity.exists())) {
+      return notFound(c, 'User preferences not found.');
+    }
+    const prefs = await entity.getState();
+    return ok(c, { userPrefs: prefs });
+  });
+  app.post('/api/user/prefs', async (c) => {
+    const auth = c.req.header('Authorization');
+    const userId = mockVerifyJWT(auth);
+    if (userId === 'anon') {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const prefsData = await c.req.json<Partial<UserPreferenceState>>();
+    const entity = new UserPreferenceEntity(c.env, userId);
+    if (!(await entity.exists())) {
+      const newPrefs = { ...UserPreferenceEntity.initialState, ...prefsData, id: userId };
+      await UserPreferenceEntity.create(c.env, newPrefs);
+      return ok(c, newPrefs);
+    }
+    const updatedPrefs = await entity.mutate(s => ({ ...s, ...prefsData }));
+    return ok(c, updatedPrefs);
+  });
+  // AI SUMMARY
+  app.post('/api/ai/summarize', async (c) => {
+    const { feedId, rawText } = await c.req.json<{ feedId: string, rawText: string }>();
+    if (!isStr(feedId) || !isStr(rawText)) {
+      return bad(c, 'feedId and rawText are required.');
+    }
+    const entity = new AiSummaryEntity(c.env, feedId);
+    const TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+    if (await entity.exists()) {
+      const summary = await entity.getState();
+      if (Date.now() - summary.cachedAt < summary.ttl) {
+        return ok(c, summary);
+      }
+    }
+    // Mock Llama/Mistral call
+    const summaryText = `Summary: ${rawText.slice(0, 100)}... analyzed via mock Workers AI. Key insight 1. Insight 2. Insight 3.`;
+    const newSummary = {
+      id: feedId,
+      narrative: summaryText,
+      cachedAt: Date.now(),
+      ttl: TTL_MS,
+    };
+    await entity.save(newSummary);
+    return ok(c, newSummary);
   });
   // FEED STATS
   app.get('/api/feeds/stats', async (c) => {
@@ -168,7 +237,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     ];
     return ok(c, mockLayers);
   });
-
   app.get('/api/economy/housing', (c) => {
     const mockTrends: HousingTrend[] = [
       { id: 'price-1mo', metric: 'price', value: 320000, trend: 5.2, period: '1mo' },
@@ -178,7 +246,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     ];
     return ok(c, mockTrends);
   });
-
   app.get('/api/market', (c) => {
     const mockListings: MarketListing[] = [
       { id: 'l1', title: '2BR Allentown Condo', price: 285000, location: 'Center City', url: 'https://example.com/listing1' },
@@ -196,7 +263,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     ];
     return ok(c, mockListings);
   });
-
   app.get('/api/events', (c) => {
     const mockEvents: EventItem[] = Array.from({ length: 20 }).map((_, i) => ({
       id: `e${i + 1}`,

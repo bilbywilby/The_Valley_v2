@@ -11,6 +11,7 @@ interface FeedListProps {
   feeds: FeedItemWithStats[];
   isLoading: boolean;
   onVote: (id: string, voteType: 'up' | 'down') => void;
+  onAiSummary: (feed: FeedItemWithStats) => void;
   density: 'full' | 'compact';
 }
 const containerVariants = {
@@ -22,7 +23,7 @@ const containerVariants = {
     },
   },
 };
-export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
+export function FeedList({ feeds, isLoading, onVote, onAiSummary, density }: FeedListProps) {
   const { searchQuery, selectedCategory, viewMode, favorites } = useFeedStore(
     useShallow(s => ({
       searchQuery: s.present.searchQuery,
@@ -84,7 +85,7 @@ export function FeedList({ feeds, isLoading, onVote, density }: FeedListProps) {
         >
           <AnimatePresence>
             {filteredFeeds.map(feed => (
-              <FeedCard key={feed.id} feed={feed} onVote={onVote} density={density} />
+              <FeedCard key={feed.id} feed={feed} onVote={onVote} onAiSummary={onAiSummary} density={density} />
             ))}
           </AnimatePresence>
         </motion.div>
