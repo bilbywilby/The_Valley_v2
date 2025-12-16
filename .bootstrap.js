@@ -81,7 +81,7 @@ function runSetupCommands() {
     "bun add @tanstack/react-query",
     "bun add react-hotkeys-hook",
     "bun install zustand",
-    "bun add -D rollup-plugin-visualizer"
+    "bun add -D eslint-plugin-react"
 ];
     
     if (commands.length === 0) {
