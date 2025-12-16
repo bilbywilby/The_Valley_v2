@@ -1,9 +1,19 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity } from "./entities";
+import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity, SentimentEntity } from "./entities";
 import { ok, bad, notFound, isStr } from './core-utils';
 const MODULES = ['news', 'gov', 'safety', 'community', 'arts', 'transit', 'business', 'education', 'lifestyle', 'health', 'sports', 'media', 'utilities'];
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
+  // Security Headers Middleware
+  app.use('/api/*', async (c, next) => {
+    c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src * data: blob:; connect-src 'self'; frame-ancestors 'none';");
+    c.header('X-Frame-Options', 'DENY');
+    c.header('X-Content-Type-Options', 'nosniff');
+    c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    await next();
+  });
   // Ensure seed data on first load
   app.use('/api/*', async (c, next) => {
     await Promise.all([
@@ -63,6 +73,19 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     }));
     return ok(c, moduleConfigs);
   });
+  // SENTIMENT
+  app.get('/api/sentiment/:id', async (c) => {
+    const id = c.req.param('id');
+    const entity = new SentimentEntity(c.env, id);
+    if (!(await entity.exists())) {
+      // Create a mock sentiment if it doesn't exist
+      const mockSentiment = { id, positive: Math.random() * 0.4 + 0.3 }; // 30% to 70% positive
+      await SentimentEntity.create(c.env, mockSentiment);
+      return ok(c, mockSentiment);
+    }
+    const sentiment = await entity.getState();
+    return ok(c, sentiment);
+  });
   // SAVED QUERIES
   app.get('/api/queries', async (c) => {
     const { items } = await QueryEntity.list(c.env, null, 100);
@@ -76,8 +99,28 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       velocityWindow: velocityWindow ?? 24,
       searchQuery: searchQuery ?? '',
       createdAt: new Date().toISOString(),
+      alerts: { dailyDigest: false },
     };
     const saved = await QueryEntity.create(c.env, queryData);
     return ok(c, saved);
+  });
+  app.post('/api/query/alerts', async (c) => {
+    const { id, enabled } = (await c.req.json()) as { id: string, enabled: boolean };
+    if (!isStr(id)) return bad(c, 'Query ID is required');
+    const entity = new QueryEntity(c.env, id);
+    if (!(await entity.exists())) {
+      return notFound(c, 'Query not found');
+    }
+    const updated = await entity.mutate(q => ({
+      ...q,
+      alerts: { ...q.alerts, dailyDigest: !!enabled }
+    }));
+    return ok(c, updated);
+  });
+  app.delete('/api/query/:id', async (c) => {
+    const id = c.req.param('id');
+    const deleted = await QueryEntity.delete(c.env, id);
+    if (!deleted) return notFound(c, 'Query not found');
+    return ok(c, { id });
   });
 }

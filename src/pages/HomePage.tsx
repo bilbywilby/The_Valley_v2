@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Rss, Github, BrainCircuit } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
@@ -8,6 +8,7 @@ import { StickySearch } from '@/components/StickySearch';
 import { FeedList } from '@/components/FeedList';
 import { ExportButtons } from '@/components/ExportButtons';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ALL_FEEDS, CATEGORIES } from '@/data/feeds';
 import { FeedStats, FeedItemWithStats, GeoTag, ModuleId } from '@/types';
 import { api } from '@/lib/api-client';
@@ -15,7 +16,7 @@ import { useModuleStore } from '@/store/module-store';
 import { useFeedStore } from '@/store/feed-store';
 import { SettingsDrawer } from '@/components/SettingsDrawer';
 import { ModuleSidebar } from '@/components/ModuleSidebar';
-import { DashboardViz } from '@/components/DashboardViz';
+const DashboardViz = lazy(() => import('@/components/DashboardViz').then(module => ({ default: module.DashboardViz })));
 const voteSchema = z.object({
   id: z.string(),
   voteType: z.enum(['up', 'down']),
@@ -34,6 +35,14 @@ async function extractEntities(feedIds: string[]): Promise<any> {
     method: 'POST',
     body: JSON.stringify({ feedIds }),
   });
+}
+function VizSkeleton() {
+  return (
+    <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 mb-8">
+      <Skeleton className="h-[350px] lg:col-span-2" />
+      <Skeleton className="h-[350px]" />
+    </div>
+  );
 }
 export function HomePage() {
   const queryClient = useQueryClient();
@@ -146,7 +155,9 @@ export function HomePage() {
         <main role="main" aria-labelledby="main-header" className="flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="py-8 md:py-10 lg:py-12">
-              <DashboardViz feeds={feedsWithStats} onFilter={handleVizFilter} />
+              <Suspense fallback={<VizSkeleton />}>
+                <DashboardViz feeds={feedsWithStats} onFilter={handleVizFilter} />
+              </Suspense>
             </div>
           </div>
           <div id="feed-list-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

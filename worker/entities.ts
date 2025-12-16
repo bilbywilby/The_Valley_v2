@@ -40,12 +40,23 @@ export interface SavedQuery {
     facets: Record<string, any>;
     velocityWindow: number;
     createdAt: string;
+    alerts: { dailyDigest: boolean };
 }
 export class QueryEntity extends IndexedEntity<SavedQuery> {
     static readonly entityName = "query";
     static readonly indexName = "queries";
-    static readonly initialState: SavedQuery = { id: "", searchQuery: "", facets: {}, velocityWindow: 24, createdAt: "" };
+    static readonly initialState: SavedQuery = { id: "", searchQuery: "", facets: {}, velocityWindow: 24, createdAt: "", alerts: { dailyDigest: false } };
     static seedData = [];
+}
+// SENTIMENT ENTITY
+export interface Sentiment {
+    id: string; // Corresponds to feed ID
+    positive: number; // Score from 0 to 1
+}
+export class SentimentEntity extends IndexedEntity<Sentiment> {
+    static readonly entityName = "sentiment";
+    static readonly indexName = "sentiments";
+    static readonly initialState: Sentiment = { id: "", positive: 0.5 };
 }
 // Add types to shared module
 declare module "@shared/types" {

@@ -13,7 +13,14 @@ import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { FinalValidator } from '@/components/FinalValidator';
 import '@/index.css'
 const HomePage = lazy(() => import('@/pages/HomePage').then(module => ({ default: module.HomePage })));
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 const router = createBrowserRouter([
   {
     path: "/",
