@@ -1,4 +1,4 @@
-import { LayoutGrid, MapPin, Menu, Car, Landmark, Search, ShoppingBag, Calendar } from 'lucide-react';
+import { LayoutGrid, MapPin, Menu, Car, Landmark, Search, ShoppingBag, Calendar, Users } from 'lucide-react';
 import { useModuleStore } from '@/store/module-store';
 import { GeoTag } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { CivicMapOverlay } from './CivicMapOverlay';
 import { HousingPulseOverlay } from './HousingPulseOverlay';
 import { ValleyMarketOverlay } from './ValleyMarketOverlay';
 import { UnifiedEventsOverlay } from './UnifiedEventsOverlay';
+import { RepFinderSheet } from './RepFinderSheet';
 async function fetchAllGeo(): Promise<GeoTag[]> {
     return api('/api/geo/all');
 }
@@ -34,34 +35,34 @@ function SidebarContent() {
       <ScrollArea className="flex-1">
         <div className="p-4">
           <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Utility Modules</h3>
-          <div className="space-y-2">
-            <Sheet>
-              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Car className="mr-2 h-4 w-4" /> Commute Overlay</Button></SheetTrigger>
-              <SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Commute Overlay</SheetTitle></SheetHeader><ScrollArea><CommuteOverlay /></ScrollArea></SheetContent>
-            </Sheet>
-            <Sheet>
-              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Search className="mr-2 h-4 w-4" /> GovWatch Search</Button></SheetTrigger>
-              <SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>GovWatch Search</SheetTitle></SheetHeader><ScrollArea><GovWatchSearch /></ScrollArea></SheetContent>
-            </Sheet>
-            <Sheet>
-              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Landmark className="mr-2 h-4 w-4" /> Civic Map</Button></SheetTrigger>
-              <SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Civic Map Layers</SheetTitle></SheetHeader><ScrollArea><CivicMapOverlay /></ScrollArea></SheetContent>
-            </Sheet>
-            <Sheet>
-              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><LayoutGrid className="mr-2 h-4 w-4" /> Housing Pulse</Button></SheetTrigger>
-              <SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Housing Pulse</SheetTitle></SheetHeader><ScrollArea className="p-4"><HousingPulseOverlay /></ScrollArea></SheetContent>
-            </Sheet>
-
-            <Sheet>
-              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><ShoppingBag className="mr-2 h-4 w-4" /> Valley Market</Button></SheetTrigger>
-              <SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Valley Market</SheetTitle></SheetHeader><ScrollArea className="p-4"><ValleyMarketOverlay /></ScrollArea></SheetContent>
-            </Sheet>
-
-            <Sheet>
-              <SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Calendar className="mr-2 h-4 w-4" /> Unified Events</Button></SheetTrigger>
-              <SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Unified Events</SheetTitle></SheetHeader><ScrollArea className="p-4"><UnifiedEventsOverlay /></ScrollArea></SheetContent>
-            </Sheet>
-          </div>
+          <motion.div
+            className="space-y-2"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.03 } } }}
+          >
+            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><Car className="mr-2 h-4 w-4" /> Commute Overlay</Button></SheetTrigger><SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Commute Overlay</SheetTitle></SheetHeader><ScrollArea><CommuteOverlay /></ScrollArea></SheetContent></Sheet>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><Search className="mr-2 h-4 w-4" /> GovWatch Search</Button></SheetTrigger><SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>GovWatch Search</SheetTitle></SheetHeader><ScrollArea><GovWatchSearch /></ScrollArea></SheetContent></Sheet>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><Landmark className="mr-2 h-4 w-4" /> Civic Map</Button></SheetTrigger><SheetContent className="w-full sm:w-[480px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Civic Map Layers</SheetTitle></SheetHeader><ScrollArea><CivicMapOverlay /></ScrollArea></SheetContent></Sheet>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><LayoutGrid className="mr-2 h-4 w-4" /> Housing Pulse</Button></SheetTrigger><SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Housing Pulse</SheetTitle></SheetHeader><ScrollArea className="p-4"><HousingPulseOverlay /></ScrollArea></SheetContent></Sheet>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><Users className="mr-2 h-4 w-4" /> My Reps Civic Lookup</Button></SheetTrigger><SheetContent className="w-full sm:w-[520px] p-0 flex flex-col z-[60]"><SheetHeader className="p-4 border-b"><SheetTitle>My Reps Civic Lookup</SheetTitle></SheetHeader><ScrollArea><RepFinderSheet /></ScrollArea></SheetContent></Sheet>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><ShoppingBag className="mr-2 h-4 w-4" /> Valley Market</Button></SheetTrigger><SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Valley Market</SheetTitle></SheetHeader><ScrollArea className="p-4"><ValleyMarketOverlay /></ScrollArea></SheetContent></Sheet>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start h-11"><Calendar className="mr-2 h-4 w-4" /> Unified Events</Button></SheetTrigger><SheetContent className="w-full sm:w-[520px] p-0 flex flex-col"><SheetHeader className="p-4 border-b"><SheetTitle>Unified Events</SheetTitle></SheetHeader><ScrollArea className="p-4"><UnifiedEventsOverlay /></ScrollArea></SheetContent></Sheet>
+            </motion.div>
+          </motion.div>
         </div>
         <Separator className="my-2" />
         <motion.div
@@ -121,7 +122,7 @@ export function ModuleSidebar() {
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="h-11 w-11 p-3"><Menu className="h-5 w-5" /></Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-80 p-0 flex flex-col h-full z-50">
+          <SheetContent side="left" className="w-80 p-0 flex flex-col h-full z-[60]">
             <SheetHeader className="p-4 border-b">
               <SheetTitle className="text-lg font-semibold tracking-tight flex items-center gap-2">
                 <LayoutGrid className="h-5 w-5" />

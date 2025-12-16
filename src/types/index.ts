@@ -88,3 +88,24 @@ export interface EventItem {
   category: 'arts' | 'civic' | 'sports';
   url: string;
 }
+export interface Rep {
+  name: string;
+  office: string;
+  party: 'Republican' | 'Democratic' | 'Independent' | 'Nonpartisan' | 'Unknown';
+  phones?: string[];
+  urls?: string[];
+  photoUrl?: string;
+}
+export interface AddressInput {
+  address: string;
+}
+export interface CivicResponse {
+  normalizedInput: {
+    line1: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  divisions: Record<string, { name: string; officeIndices: number[] }>;
+  officials: Rep[];
+}

@@ -1,5 +1,5 @@
 import { IndexedEntity } from "./core-utils";
-import type { User, Chat, ChatMessage, FeedStats, GeoTag, CommuteIncident, GovWatchResult, CivicLayer, UserPreferenceState, AiSummary } from "@shared/types";
+import type { User, Chat, ChatMessage, FeedStats, GeoTag, CommuteIncident, GovWatchResult, CivicLayer, UserPreferenceState, AiSummary, CivicResponse, Rep } from "@shared/types";
 import { MOCK_CHAT_MESSAGES, MOCK_CHATS, MOCK_USERS } from "@shared/mock-data";
 // USER ENTITY
 export class UserEntity extends IndexedEntity<User> {
@@ -71,6 +71,18 @@ export class AiSummaryEntity extends IndexedEntity<AiSummary> {
   static readonly indexName = "ai-summaries";
   static readonly initialState: AiSummary = { id: '', narrative: '', cachedAt: 0, ttl: 0 };
 }
+// CIVIC ENTITY
+export interface CivicData {
+  id: string; // Corresponds to userId
+  address: string;
+  response: CivicResponse;
+  updatedAt: number;
+}
+export class CivicEntity extends IndexedEntity<CivicData> {
+  static readonly entityName = "civic";
+  static readonly indexName = "civics";
+  static readonly initialState: CivicData = { id: "", address: "", response: { normalizedInput: { line1: '', city: '', state: '', zip: '' }, divisions: {}, officials: [] }, updatedAt: 0 };
+}
 // Add types to shared module
 declare module "@shared/types" {
   export interface FeedStats {
@@ -117,5 +129,23 @@ declare module "@shared/types" {
     narrative: string;
     cachedAt: number;
     ttl: number;
+  }
+  export interface Rep {
+    name: string;
+    office: string;
+    party: 'Republican' | 'Democratic' | 'Independent' | 'Nonpartisan' | 'Unknown';
+    phones?: string[];
+    urls?: string[];
+    photoUrl?: string;
+  }
+  export interface CivicResponse {
+    normalizedInput: {
+      line1: string;
+      city: string;
+      state: string;
+      zip: string;
+    };
+    divisions: Record<string, { name: string; officeIndices: number[] }>;
+    officials: Rep[];
   }
 }

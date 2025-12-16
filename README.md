@@ -4,6 +4,7 @@ A comprehensive, interactive, and visually polished Progressive Web App (PWA) se
 - **Dynamic Civic Dashboard**: A categorized, responsive grid of intelligence sources with real-time search and filtering.
 - **Sticky Search & Filtering**: Instant keyword and category search that sticks to the top while scrolling.
 - **Personalization**: Star sources to curate a "My Feeds" view, persisted locally via LocalStorage.
+- **My Reps Civic Lookup**: Find your local, state, and federal representatives by address.
 - **Data Export**: Download feeds as OPML (RSS readers) or CSV (spreadsheets) with proper sanitization.
 - **Community Vetting**: Thumbs up/down voting with backend storage for community-driven health scores.
 - **Source Health Status**: Visual badges indicating Active/Inactive status.
@@ -11,6 +12,10 @@ A comprehensive, interactive, and visually polished Progressive Web App (PWA) se
 - **Advanced UX**: Keyboard shortcuts, pagination, sorting, skeletons for loading, and dark mode.
 - **Modular Civic Overlays**: Toggle categories on/off to focus on specific intelligence areas like Government, Safety, or Arts.
 - **Geospatial Intelligence Calibration**: Visualize the geographic distribution of sources and run calibration routines.
+## My Reps Civic Lookup
+- **API**: `curl -X POST /api/civic/lookup -H "Content-Type: application/json" -d '{"address":"Allentown, PA"}'`
+- **UI**: Access via "My Reps Civic Lookup" in the Module Sidebar or Settings.
+- **Auth**: Uses a mock Bearer token for demo purposes. Anonymous users get mock data; logged-in users can have their lookups saved.
 ## Lighthouse & WCAG Certification
 | Metric | Score |
 |---|---|
@@ -50,8 +55,16 @@ The dashboard is designed to be fully accessible and responsive across a wide ra
 1.  **Install Bun**: `curl -fsSL https://bun.sh/install | bash`
 2.  **Clone & Install**: `git clone <your-repo-url> && cd valley-feed-index && bun install`
 3.  **Development**: `bun run dev` (runs on http://localhost:3000)
-4.  **Deployment**: `bun run deploy`
+4.  **Deployment**: `bun run deploy` or `wrangler publish`
+## Monitoring
+- **Cloudflare Analytics**: View traffic and performance data at `https://dash.cloudflare.com/...`
+- **Environment Flags**: `VITE_REPS_MOCK=true` can be used to disable the API proxy and use local mock data.
 ## Changelog
+### v1.1.0 - My Reps Pack (2024-05-22)
+- **Feature**: Added "My Reps" civic lookup module.
+- **Feature**: New API endpoint `/api/civic/lookup` to find representatives.
+- **Feature**: Integrated RepFinder sheet into sidebar and settings.
+- **Refactor**: Enhanced mock JWT handling for user-specific data.
 ### v1.0.0 - Production Launch (2024-05-21)
 - **Feature**: Full PWA implementation with offline support and installability.
 - **Feature**: Added advanced utility modules: Housing Pulse, Valley Market, and Unified Events.

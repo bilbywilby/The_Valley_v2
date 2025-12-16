@@ -1,4 +1,4 @@
-import { Settings, Undo, Redo, Trash2, BarChart2, LayoutGrid, Save, Bell, Zap, User } from 'lucide-react';
+import { Settings, Undo, Redo, Trash2, LayoutGrid, Save, User, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
@@ -18,6 +18,7 @@ import { api } from '@/lib/api-client';
 import { getMockToken, getUserIdFromToken } from '@/lib/auth';
 import { toast } from 'sonner';
 import type { UserPreferenceState } from '@/types';
+import { RepFinderSheet } from './RepFinderSheet';
 interface SavedQuery {
   id: string;
   searchQuery: string;
@@ -135,10 +136,6 @@ export function SettingsDrawer() {
   const moduleList = useMemo(() => Object.values(modules).sort((a, b) => b.priority - a.priority), [modules]);
   const enabledCount = useMemo(() => moduleList.filter(m => m.enabled).length, [moduleList]);
   const handleClearData = () => { localStorage.clear(); window.location.reload(); };
-  const handleLighthouseAudit = () => {
-    toast.info('Simulating Lighthouse audit...');
-    setTimeout(() => toast.success('Lighthouse Audit Complete!', { description: 'Performance: 100, Accessibility: 100, Best Practices: 100, SEO: 100' }), 1500);
-  };
   const handlePrivacyToggle = () => {
     togglePrivacyMode();
     toast.success(`Duck Shield ${!privacyMode ? 'activated' : 'deactivated'}.`, { description: !privacyMode ? 'Analytics disabled.' : 'Analytics re-enabled.' });
@@ -160,9 +157,13 @@ export function SettingsDrawer() {
                 <label htmlFor="privacy-mode-toggle" className="text-sm font-medium cursor-pointer pr-2">Duck Shield<p className="text-xs text-muted-foreground">Disable remote analytics.</p></label>
                 <Switch id="privacy-mode-toggle" checked={privacyMode} onCheckedChange={handlePrivacyToggle} />
               </div>
-              <Badge variant={privacyMode ? "default" : "secondary"} className="w-full justify-center">{privacyMode ? '🛡️ Active (Local Only)' : 'Off'}</Badge>
+              <Badge variant={privacyMode ? "default" : "secondary"} className="w-full justify-center">{privacyMode ? '���️ Active (Local Only)' : 'Off'}</Badge>
             </section>
             <UserPreferencesSection />
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">Civic Lookup</h3>
+              <Sheet><SheetTrigger asChild><Button variant="outline" className="w-full justify-start"><Users className="mr-2 h-4 w-4" /> Find My Reps</Button></SheetTrigger><SheetContent className="w-full sm:w-[520px] p-0 flex flex-col z-[70]"><SheetHeader className="p-4 border-b"><SheetTitle>My Reps Civic Lookup</SheetTitle></SheetHeader><ScrollArea><RepFinderSheet /></ScrollArea></SheetContent></Sheet>
+            </section>
             <SavedQueriesSection />
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">History</h3>
@@ -196,7 +197,6 @@ export function SettingsDrawer() {
         </ScrollArea>
         <Separator />
         <div className="p-4 space-y-2">
-          <Button variant="outline" className="w-full" onClick={handleLighthouseAudit}><Zap className="mr-2 h-4 w-4" /> Run Lighthouse Audit</Button>
           <AlertDialog>
             <AlertDialogTrigger asChild><Button variant="destructive" className="w-full"><Trash2 className="mr-2 h-4 w-4" /> Clear Local Data</Button></AlertDialogTrigger>
             <AlertDialogContent>

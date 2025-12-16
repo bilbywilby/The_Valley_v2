@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity, SentimentEntity, UserPreferenceEntity, AiSummaryEntity } from "./entities";
+import { UserEntity, ChatBoardEntity, FeedStatsEntity, GeoEntity, QueryEntity, SentimentEntity, UserPreferenceEntity, AiSummaryEntity, CivicEntity } from "./entities";
 import { ok, bad, notFound, isStr, HousingTrend, MarketListing, EventItem } from './core-utils';
-import type { UserPreferenceState } from "@shared/types";
+import type { UserPreferenceState, CivicResponse, Rep } from "@shared/types";
 const MODULES = ['news', 'gov', 'safety', 'community', 'arts', 'transit', 'business', 'education', 'lifestyle', 'health', 'sports', 'media', 'utilities'];
 /**
  * Mock JWT verification. In a real app, use a proper JWT library.
@@ -66,6 +66,34 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     }
     const updatedPrefs = await entity.mutate(s => ({ ...s, ...prefsData }));
     return ok(c, updatedPrefs);
+  });
+  // CIVIC LOOKUP
+  app.post('/api/civic/lookup', async (c) => {
+    const { address } = await c.req.json<{ address: string }>();
+    if (!isStr(address)) return bad(c, 'Address is required.');
+    const MOCK_REPS: Rep[] = [
+      { name: 'Susan Wild', office: 'U.S. Representative PA-7', party: 'Democratic', phones: ['(202) 225-6411'], urls: ['https://wild.house.gov/'] },
+      { name: 'Bob Casey Jr.', office: 'U.S. Senator', party: 'Democratic', phones: ['(202) 224-6324'], urls: ['https://www.casey.senate.gov/'] },
+      { name: 'John Fetterman', office: 'U.S. Senator', party: 'Democratic', phones: ['(202) 224-4254'], urls: ['https://www.fetterman.senate.gov/'] },
+      { name: 'Matt Tuerk', office: 'Mayor of Allentown', party: 'Democratic', phones: ['(610) 437-7511'], urls: ['https://www.allentownpa.gov/'] },
+      { name: 'J. William Reynolds', office: 'Mayor of Bethlehem', party: 'Democratic', phones: ['(610) 865-7100'], urls: ['https://www.bethlehem-pa.gov/'] },
+    ];
+    const mockResponse: CivicResponse = {
+      normalizedInput: { line1: address, city: 'Allentown', state: 'PA', zip: '18101' },
+      divisions: {
+        'ocd-division/country:us': { name: 'United States', officeIndices: [1, 2] },
+        'ocd-division/country:us/state:pa/cd:7': { name: 'Pennsylvania\'s 7th congressional district', officeIndices: [0] },
+        'ocd-division/country:us/state:pa/place:allentown': { name: 'Allentown city', officeIndices: [3] },
+      },
+      officials: MOCK_REPS,
+    };
+    const auth = c.req.header('Authorization');
+    const userId = mockVerifyJWT(auth);
+    if (userId !== 'anon') {
+      const entity = new CivicEntity(c.env, userId);
+      await entity.save({ id: userId, address, response: mockResponse, updatedAt: Date.now() });
+    }
+    return ok(c, mockResponse);
   });
   // AI SUMMARY
   app.post('/api/ai/summarize', async (c) => {
