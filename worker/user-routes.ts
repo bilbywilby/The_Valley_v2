@@ -41,6 +41,31 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const updatedStats = await entity.mutate(s => ({ ...s, [voteType === 'up' ? 'upvotes' : 'downvotes']: s[voteType === 'up' ? 'upvotes' : 'downvotes'] + 1 }));
     return ok(c, updatedStats);
   });
+  // GET single feed with stats + geo
+  app.get('/api/feeds/:id', async (c) => {
+    const id = c.req.param('id');
+    if (!isStr(id)) return bad(c, 'invalid id');
+    const statsEntity = new FeedStatsEntity(c.env, id);
+    if (!(await statsEntity.exists())) return notFound(c, 'feed stats not found');
+    const stats = await statsEntity.getState();
+    const geoEntity = new GeoEntity(c.env, id);
+    const geo = await geoEntity.exists() ? await geoEntity.getState() : null;
+    return ok(c, { id, stats, geo });
+  });
+  // POST toggle feed status active/inactive
+  app.post('/api/feeds/:id/toggle-status', async (c) => {
+    const id = c.req.param('id');
+    if (!isStr(id)) return bad(c, 'invalid id');
+    const entity = new FeedStatsEntity(c.env, id);
+    if (!(await entity.exists())) {
+      await FeedStatsEntity.create(c.env, { id, upvotes: 0, downvotes: 0, status: 'inactive' });
+    }
+    const updated = await entity.mutate((s) => ({
+      ...s,
+      status: s.status === 'active' ? 'inactive' : 'active',
+    }));
+    return ok(c, updated);
+  });
   // GEOSPATIAL & MODULES
   app.get('/api/geo/all', async (c) => {
     const { items } = await GeoEntity.list(c.env, null, 1000);
